@@ -44,17 +44,33 @@ export const getOverviewStats = async (req: AuthenticatedRequest, res: Response)
         .select('status')
         .eq('donor_id', donor.id);
     
+    // 5. Nearby Activity (Recent and nearby NGOs)
+    // For simplicity, we fetch all receivers since we don't need a complex spatial query for the overview map yet, 
+    // but ideally we'd show only those in the same city or within X km.
+    const { data: receivers } = await supabase
+        .from('receivers')
+        .select('lat, lng, full_name')
+        .limit(10);
+
+    const nearbyActivity = receivers?.map(r => ({
+        lat: r.lat,
+        lng: r.lng,
+        label: r.full_name,
+        type: 'receiver'
+    })) || [];
+
     const stats = {
         totalSavedKg,
         mealsProvided,
         ngosHelped: uniqueReceivers?.length || 0,
-        co2Offset: Math.round(totalSavedKg * 2.5), // Approx 2.5kg CO2 per kg food waste
+        co2Offset: Math.round(totalSavedKg * 2.5),
         statusDistribution: {
             available: statusCounts?.filter(l => l.status === 'available').length || 0,
             claimed: statusCounts?.filter(l => l.status === 'claimed').length || 0,
             completed: statusCounts?.filter(l => l.status === 'completed').length || 0,
             expired: statusCounts?.filter(l => l.status === 'expired').length || 0,
-        }
+        },
+        nearbyActivity
     };
 
     res.status(200).json({ success: true, data: stats });

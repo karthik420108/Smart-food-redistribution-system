@@ -8,13 +8,13 @@ export interface DonorProfile {
   full_name: string;
   email: string;
   phone?: string;
+  address?: string;
+  pincode?: string;
   status: 'pending' | 'verified' | 'suspended' | 'rejected';
   donor_type: 'individual' | 'business';
   fssai_number?: string;
   gst_number?: string;
-  kyc_document_url?: string;
   selfie_url?: string;
-  address?: string;
   lat?: number;
   lng?: number;
   rating: number;

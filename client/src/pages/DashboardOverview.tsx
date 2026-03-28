@@ -6,7 +6,8 @@ import {
   Users, 
   MapPin, 
   TrendingUp, 
-  Clock 
+  Clock,
+  Plus
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -44,13 +45,18 @@ export function DashboardOverview() {
         setStats(overview);
         setWeeklyData(weekly);
         
-        const { data: claims } = await supabase
-          .from('claims')
-          .select('*, food_listings(title)')
-          .limit(5)
-          .order('created_at', { ascending: false });
+        // Fetch recent claims AND recent listings for a complete activity feed
+        const [ { data: claims }, { data: newListings } ] = await Promise.all([
+          supabase.from('claims').select('*, food_listings(title, donor_id)').eq('food_listings.donor_id', donorProfile?.id).limit(5).order('created_at', { ascending: false }),
+          supabase.from('food_listings').select('*').eq('donor_id', donorProfile?.id).limit(5).order('created_at', { ascending: false })
+        ]);
         
-        setActivities(claims || []);
+        const combinedActivities = [
+          ...(claims || []).map(c => ({ ...c, activity_type: 'claim' })),
+          ...(newListings || []).map(l => ({ ...l, activity_type: 'listing' }))
+        ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+
+        setActivities(combinedActivities);
       } catch (err) {
         console.error('Failed to fetch dashboard data:', err);
       } finally {
@@ -206,18 +212,22 @@ export function DashboardOverview() {
         <motion.div variants={itemVariants} className="bg-white dark:bg-gray-950 p-6 rounded-xl border shadow-sm">
            <h3 className="text-lg font-bold mb-4">Live Activity</h3>
            <div className="space-y-4">
-              {activities.length > 0 ? activities.map((activity) => (
+               {activities.length > 0 ? activities.map((activity) => (
                 <div key={activity.id} className="flex items-center gap-4 py-3 border-b last:border-0 hover:bg-gray-50 dark:hover:bg-gray-900 px-2 rounded-lg transition-colors overflow-hidden">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      activity.status === 'confirmed' ? 'bg-blue-50 text-blue-500' : 'bg-green-50 text-green-500'
+                      activity.activity_type === 'claim' ? 'bg-blue-50 text-blue-500' : 'bg-green-50 text-green-500'
                   }`}>
-                    <Heart className="w-5 h-5" />
+                    {activity.activity_type === 'claim' ? <Heart className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">Matched NGO <span className="text-gray-500 font-normal">claimed {activity.quantity_claimed}kg of {activity.food_listings?.title || 'Food Item'}</span></p>
+                    {activity.activity_type === 'claim' ? (
+                      <p className="text-sm font-medium truncate">Matched NGO <span className="text-gray-500 font-normal">claimed {activity.quantity_claimed}kg of {activity.food_listings?.title || 'Food Item'}</span></p>
+                    ) : (
+                      <p className="text-sm font-medium truncate">Asset Published: <span className="text-gray-500 font-normal">{activity.title} ({activity.quantity}{activity.quantity_unit})</span></p>
+                    )}
                     <p className="text-xs text-gray-500">{new Date(activity.created_at).toLocaleTimeString()}</p>
                   </div>
-                  <Link to={`/listings/${activity.listing_id}`} className="text-sm text-primary font-medium hover:underline flex-shrink-0">View</Link>
+                  <Link to={`/listings/${activity.activity_type === 'claim' ? activity.listing_id : activity.id}`} className="text-sm text-primary font-medium hover:underline flex-shrink-0">View</Link>
                 </div>
               )) : (
                 <div className="text-center py-10 text-gray-500 border-2 border-dashed rounded-xl">

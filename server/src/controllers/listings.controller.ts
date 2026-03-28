@@ -36,7 +36,7 @@ export const createListing = async (req: AuthenticatedRequest, res: Response) =>
     }
 
     // Get donor id and location
-    const { data: donor } = await supabase.from('donors').select('id, lat, lng').eq('user_id', userId).single();
+    const { data: donor } = await supabase.from('donors').select('id, lat, lng, full_name').eq('user_id', userId).single();
     if (!donor) {
        res.status(404).json({ success: false, error: 'Donor profile not found' });
        return;
@@ -93,7 +93,7 @@ export const createListing = async (req: AuthenticatedRequest, res: Response) =>
         const notifications = nearbyReceivers.map((r: any) => ({
             user_id: r.user_id,
             type: 'new_listing',
-            message: `New food available nearby: ${listing.title} at ${listing.pickup_address}`,
+            message: `New food available nearby from ${donor.full_name || 'a local donor'}: ${listing.title}`,
             metadata: { 
                 listing_id: listing.id, 
                 distance_km: Math.round(r.dist_meters / 100) / 10 

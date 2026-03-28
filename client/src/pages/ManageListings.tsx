@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Filter, MoreHorizontal, FileDown, Plus, Trash2, ExternalLink, AlertCircle, Clock } from 'lucide-react';
+import { Search, Filter, MoreHorizontal, FileDown, Plus, Trash2, ExternalLink, AlertCircle, Clock, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
