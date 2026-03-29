@@ -7,7 +7,7 @@ Demo Vedio Link - https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC
 ---
 
   <h2>Innovation Points</h2>
-- Expiry-Urgency Adaptive Discovery Feed
+- Expiry-Urgency Adaptive Discovery Feed \n
 - Global impact map of a donor,ngo
 - Realtime tracking of volunteer availability for food collection
 - Customised smart priority based food dispatch scheduling sequences
