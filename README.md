@@ -1,12 +1,24 @@
 # RescueBite — Real-time Food Redistribution Platform
 
+---
+
+Demo Vedio Link - https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC_QxHVl3lS9
+
+---
+
+Short Description :- 
+
+Our web application works as a bridge between food donors and NGOs.
+Donors upload surplus food details, which are sent to nearby NGOs.
+NGOs assign volunteers for pickup, and the food is collected and distributed to people in need, with real-time tracking ensuring transparency.
+
 Smart real-time system to convert surplus food into meals through coordinated donors, NGOs, and volunteers.
 
+---
 - Frontend: React + Vite + TypeScript
 - Backend: Node.js + Express + Socket.IO
 - Database/Auth: Supabase (PostgreSQL, Realtime, Storage)
 - Real-time: Socket.IO + Supabase Realtime
-- Notifications: FCM / Twilio / Email
 - Goals: reduce food waste, minimize hunger, ensure trusted last-mile redistribution
 
 ---
@@ -67,20 +79,16 @@ Smart real-time system to convert surplus food into meals through coordinated do
 - OTP + proof-based secure handoff
 - Continuous location tracking (SOS / deviation alerts)
 - Impact attribution and leaderboard points
-- Notification engine (in-app + SMS + email)
-- Security: helmet, rate-limit, JWT auth, zod/express-validator
-
 ---
 
 ## Tech stack
 
 ### Frontend
-- React (19.x) + Vite
+- React 18 + Vite
 - TypeScript
 - TailwindCSS
-- Zustand (state)
-- React Hook Form + Zod validation
-- Leaflet / Mapbox (mapping)
+- React Hook Form 
+- Leaflet + Open Street View
 - Socket.IO client
 - Axios for API
 - Recharts for analytics
@@ -91,17 +99,14 @@ Smart real-time system to convert surplus food into meals through coordinated do
 - Socket.IO
 - Supabase client
 - Rate limiting + helmet
-- Zod + express-validator
+- Express-validator
 - JWT auth
-- Node-cron + background tasks
 - OpenAI for optional description automation
-- Twilio / nodemailer for notifications
 
 ### Database/infra
 - Supabase / PostgreSQL
 - Supabase Realtime and Storage
-- Redis + BullMQ (for queueing, optional)
-- Vercel/Netlify (frontend host), Railway/Render (backend host)
+- Vercel
 
 ---
 
@@ -145,7 +150,7 @@ Default dev: `http://localhost:5173`
 
 - `PORT`, `SUPABASE_URL`, `SUPABASE_KEY`
 - `JWT_SECRET`
-- `OPENAI_API_KEY` (optional)
+- `OPENAI_API_KEY`
 - `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM`
 - `MAIL_HOST`, `MAIL_USER`, `MAIL_PASS`
 - `ADMIN_EMAIL`, `ADMIN_PASSWORD`
