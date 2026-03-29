@@ -22,6 +22,8 @@ An intelligent system that dynamically schedules food pickups and deliveries bas
 
 ### 5. 🏆 Competitive Leaderboard System
 Gamified profiles and rankings for NGOs and donors to encourage participation and recognize impactful contributions.
+
+
 ---
 
 Short Description :- 
