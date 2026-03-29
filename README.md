@@ -103,10 +103,8 @@ Smart real-time system to convert surplus food into meals through coordinated do
 - JWT auth
 - OpenAI for optional description automation
 
-### Database/infra
+### Database
 - Supabase / PostgreSQL
-- Supabase Realtime and Storage
-- Vercel
 
 ---
 
@@ -123,7 +121,7 @@ cd Smart-food-redistribution-system
 cd server
 npm install
 cp .env.example .env
-# Fill .env with your Supabase/Twilio/OpenAI etc
+# Fill .env with your Supabase
 npm run build
 npm run dev
 \`\`\`
