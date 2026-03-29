@@ -1,4 +1,4 @@
-# FoodBridge — Real-Time Surplus Food Redistribution Platform
+# RescueBite — Real-Time Surplus Food Redistribution Platform
 
 <div align="center">
 
