@@ -4,8 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Search, ClipboardList, MapPin, Users, BarChart3,
   Building2, Settings, Bell, ChevronLeft, ChevronRight, LogOut,
-  Menu, FileText, Activity, HelpCircle, Zap, Home
+  Menu, FileText, Activity, HelpCircle, Zap, Home, Package, X
 } from 'lucide-react';
+import { Logo } from '../Logo';
 
 import { supabase } from '../../lib/supabase';
 import { useNgoStore } from '../../store/ngoStore';
@@ -45,15 +46,7 @@ export function NgoLayout() {
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-900 to-gray-950 text-white">
       {/* Logo */}
       <div className={`flex items-center gap-3 p-4 border-b border-white/10 ${collapsed ? 'justify-center' : ''}`}>
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold text-sm">FB</span>
-        </div>
-        {!collapsed && (
-          <div>
-            <div className="font-bold text-sm text-white">FoodBridge</div>
-            <div className="text-xs text-teal-400">NGO Portal</div>
-          </div>
-        )}
+        <Logo variant="ngo" size="md" showText={!collapsed} collapsed={collapsed} />
       </div>
 
       {/* NGO Identity */}

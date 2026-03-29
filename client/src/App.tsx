@@ -12,6 +12,7 @@ import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { useAuthStore } from './store/authStore';
 import { useEffect, lazy, Suspense } from 'react';
+import { ThemeProvider } from './contexts/ThemeContext';
 
 // Landing
 import { PortalSelector } from './pages/landing/PortalSelector';
@@ -112,115 +113,117 @@ function App() {
   useEffect(() => { initialize(); }, [initialize]);
 
   return (
-    <BrowserRouter>
-      <Toaster
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: '#1f2937',
-            color: '#fff',
-            border: '1px solid rgba(255,255,255,0.1)',
-            borderRadius: '12px',
-            fontSize: '13px',
-          },
-        }}
-      />
-      <Routes>
-        {/* ───────────────────────────────────────────
-            Landing / Role selector — ALWAYS shown at /
-            regardless of auth state. Users pick their
-            role and go to the specific login.
-        ─────────────────────────────────────────── */}
-        <Route path="/" element={<PortalSelector />} />
+    <ThemeProvider>
+      <BrowserRouter>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            style: {
+              background: '#1f2937',
+              color: '#fff',
+              border: '1px solid rgba(255,255,255,0.1)',
+              borderRadius: '12px',
+              fontSize: '13px',
+            },
+          }}
+        />
+        <Routes>
+          {/* ───────────────────────────────────────────
+              Landing / Role selector — ALWAYS shown at /
+              regardless of auth state. Users pick their
+              role and go to the specific login.
+          ─────────────────────────────────────────── */}
+          <Route path="/" element={<PortalSelector />} />
 
-        {/* ───────────────────────────────────────────
-            Donor Auth
-        ─────────────────────────────────────────── */}
-        <Route path="/login"    element={<Login />} />
-        <Route path="/register" element={<Register />} />
+          {/* ───────────────────────────────────────────
+              Donor Auth
+          ─────────────────────────────────────────── */}
+          <Route path="/login"    element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-        {/* ───────────────────────────────────────────
-            Donor Dashboard  (/donor/*)
-        ─────────────────────────────────────────── */}
-        <Route
-          path="/donor"
-          element={
-            <DonorProtectedRoute>
-              <Layout />
-            </DonorProtectedRoute>
-          }
-        >
-          <Route index                element={<DashboardOverview />} />
-          <Route path="manage-listings" element={<ManageListings />} />
-          <Route path="create-listing"  element={<CreateListing />} />
-          <Route path="listings/:id"    element={<ListingDetail />} />
-          <Route path="analytics"       element={<Analytics />} />
-          <Route path="notifications"   element={<Notifications />} />
-          <Route path="profile"         element={<Profile />} />
-        </Route>
+          {/* ───────────────────────────────────────────
+              Donor Dashboard  (/donor/*)
+          ─────────────────────────────────────────── */}
+          <Route
+            path="/donor"
+            element={
+              <DonorProtectedRoute>
+                <Layout />
+              </DonorProtectedRoute>
+            }
+          >
+            <Route index                element={<DashboardOverview />} />
+            <Route path="manage-listings" element={<ManageListings />} />
+            <Route path="create-listing"  element={<CreateListing />} />
+            <Route path="listings/:id"    element={<ListingDetail />} />
+            <Route path="analytics"       element={<Analytics />} />
+            <Route path="notifications"   element={<Notifications />} />
+            <Route path="profile"         element={<Profile />} />
+          </Route>
 
-        {/* ───────────────────────────────────────────
-            NGO Auth (public)
-        ─────────────────────────────────────────── */}
-        <Route path="/ngo/login"    element={<NgoLogin />} />
-        <Route path="/ngo/register" element={<NgoRegister />} />
+          {/* ───────────────────────────────────────────
+              NGO Auth (public)
+          ─────────────────────────────────────────── */}
+          <Route path="/ngo/login"    element={<NgoLogin />} />
+          <Route path="/ngo/register" element={<NgoRegister />} />
 
-        {/* ───────────────────────────────────────────
-            NGO Dashboard (/ngo/*)
-        ─────────────────────────────────────────── */}
-        <Route
-          path="/ngo"
-          element={
-            <NgoProtectedRoute>
-              <NgoLayout />
-            </NgoProtectedRoute>
-          }
-        >
-          <Route index element={<NgoDashboard />} />
-          <Route path="tasks"      element={<TaskAssignmentBoard />} />
-          <Route path="volunteers" element={<Volunteers />} />
-          <Route path="claims"     element={<Claims />} />
-          <Route path="tracking"   element={<Suspense fallback={<LoadingFallback />}><LiveTracking /></Suspense>} />
-          <Route path="discover"   element={<Suspense fallback={<LoadingFallback />}><DiscoverFood /></Suspense>} />
-          <Route path="impact"     element={<Suspense fallback={<LoadingFallback />}><ImpactPage /></Suspense>} />
-          <Route path="profile"    element={<Suspense fallback={<LoadingFallback />}><NgoProfilePage /></Suspense>} />
-          <Route path="reports"       element={<div className="p-6 text-gray-400">Reports coming soon</div>} />
-          <Route path="notifications" element={<div className="p-6 text-gray-400">Notifications coming soon</div>} />
-          <Route path="settings"      element={<div className="p-6 text-gray-400">Settings coming soon</div>} />
-          <Route path="activity"      element={<div className="p-6 text-gray-400">Activity log coming soon</div>} />
-        </Route>
+          {/* ───────────────────────────────────────────
+              NGO Dashboard (/ngo/*)
+          ─────────────────────────────────────────── */}
+          <Route
+            path="/ngo"
+            element={
+              <NgoProtectedRoute>
+                <NgoLayout />
+              </NgoProtectedRoute>
+            }
+          >
+            <Route index element={<NgoDashboard />} />
+            <Route path="tasks"      element={<TaskAssignmentBoard />} />
+            <Route path="volunteers" element={<Volunteers />} />
+            <Route path="claims"     element={<Claims />} />
+            <Route path="tracking"   element={<Suspense fallback={<LoadingFallback />}><LiveTracking /></Suspense>} />
+            <Route path="discover"   element={<Suspense fallback={<LoadingFallback />}><DiscoverFood /></Suspense>} />
+            <Route path="impact"     element={<Suspense fallback={<LoadingFallback />}><ImpactPage /></Suspense>} />
+            <Route path="profile"    element={<Suspense fallback={<LoadingFallback />}><NgoProfilePage /></Suspense>} />
+            <Route path="reports"       element={<div className="p-6 text-gray-400">Reports coming soon</div>} />
+            <Route path="notifications" element={<div className="p-6 text-gray-400">Notifications coming soon</div>} />
+            <Route path="settings"      element={<div className="p-6 text-gray-400">Settings coming soon</div>} />
+            <Route path="activity"      element={<div className="p-6 text-gray-400">Activity log coming soon</div>} />
+          </Route>
 
-        {/* ───────────────────────────────────────────
-            Volunteer Auth (public — dedicated page)
-        ─────────────────────────────────────────── */}
-        <Route path="/volunteer/login" element={<VolunteerLogin />} />
+          {/* ───────────────────────────────────────────
+              Volunteer Auth (public — dedicated page)
+          ─────────────────────────────────────────── */}
+          <Route path="/volunteer/login" element={<VolunteerLogin />} />
 
-        {/* ───────────────────────────────────────────
-            Volunteer Dashboard (/volunteer/*)
-        ─────────────────────────────────────────── */}
-        <Route
-          path="/volunteer"
-          element={
-            <VolunteerProtectedRoute>
-              <VolunteerLayout />
-            </VolunteerProtectedRoute>
-          }
-        >
-          <Route index       element={<VolunteerHome />} />
-          <Route path="tasks"   element={<Suspense fallback={<LoadingFallback />}><VolunteerTasks /></Suspense>} />
-          <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VolunteerProfile /></Suspense>} />
-        </Route>
+          {/* ───────────────────────────────────────────
+              Volunteer Dashboard (/volunteer/*)
+          ─────────────────────────────────────────── */}
+          <Route
+            path="/volunteer"
+            element={
+              <VolunteerProtectedRoute>
+                <VolunteerLayout />
+              </VolunteerProtectedRoute>
+            }
+          >
+            <Route index       element={<VolunteerHome />} />
+            <Route path="tasks"   element={<Suspense fallback={<LoadingFallback />}><VolunteerTasks /></Suspense>} />
+            <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VolunteerProfile /></Suspense>} />
+          </Route>
 
-        {/* Volunteer full-screen task flow pages */}
-        <Route path="/volunteer/tasks/:id/otp"      element={<VerifyOtpPage />} />
-        <Route path="/volunteer/tasks/:id/complete" element={<CompleteTaskPage />} />
+          {/* Volunteer full-screen task flow pages */}
+          <Route path="/volunteer/tasks/:id/otp"      element={<VerifyOtpPage />} />
+          <Route path="/volunteer/tasks/:id/complete" element={<CompleteTaskPage />} />
 
-        {/* ───────────────────────────────────────────
-            Catch-all → role selector
-        ─────────────────────────────────────────── */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+          {/* ───────────────────────────────────────────
+              Catch-all → role selector
+          ─────────────────────────────────────────── */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   );
 }
 

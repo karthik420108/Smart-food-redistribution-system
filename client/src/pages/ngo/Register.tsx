@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Building2, FileText, MapPin, Users, CheckCircle,
-  ChevronRight, ChevronLeft, Eye, EyeOff, Upload, X, Plus, Minus
+  ChevronRight, ChevronLeft, Eye, EyeOff, Upload, X, Plus, Minus, HeartHandshake
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
@@ -85,18 +85,21 @@ export function NgoRegister() {
   return (
     <div className="min-h-screen bg-gray-950 flex">
       {/* Left Panel */}
-      <div className="hidden lg:flex w-[380px] flex-col bg-gradient-to-b from-teal-900 to-gray-900 p-10 relative overflow-hidden">
-        <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 20% 50%, #0d9488 0%, transparent 50%), radial-gradient(circle at 80% 20%, #7c3aed 0%, transparent 50%)'}} />
+      <div className="hidden lg:flex w-[380px] flex-col bg-gradient-to-b from-green-900 to-gray-900 p-10 relative overflow-hidden">
+        <div className="absolute inset-0 opacity-20" style={{backgroundImage:'radial-gradient(circle at 20% 50%, #22c55e 0%, transparent 50%), radial-gradient(circle at 80% 20%, #3b82f6 0%, transparent 50%)'}} />
         <div className="relative z-10">
           <Link to="/" className="flex items-center gap-3 mb-10">
-            <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur flex items-center justify-center">
-              <span className="text-white font-bold text-lg">FB</span>
+            <div className="w-10 h-10 rounded-xl bg-green-500 shadow-lg border-b-2 border-green-700 flex items-center justify-center">
+               <HeartHandshake className="text-white w-6 h-6" />
             </div>
-            <span className="text-white font-semibold text-lg">FoodBridge</span>
+            <div className="flex items-baseline gap-0.5">
+              <span className="text-white font-black text-xl tracking-tight uppercase">Rescue</span>
+              <span className="text-green-500 font-black text-xl tracking-tight uppercase">Bite</span>
+            </div>
           </Link>
           <h1 className="text-3xl font-bold text-white mb-3">Join the Mission</h1>
-          <p className="text-teal-200 text-sm leading-relaxed mb-8">
-            Register your NGO to start claiming surplus food and feeding communities in need. Verified NGOs gain access to real-time listings, volunteer management, and impact analytics.
+          <p className="text-green-200 text-sm leading-relaxed mb-8">
+            Register your NGO with RescueBite to start claiming surplus food and feeding communities in need. Verified partners gain access to real-time logistics, volunteer management, and impact analytics.
           </p>
           <div className="space-y-3">
             {['Real-time food listings near you', 'Manage volunteers & pickups', 'Track impact & generate reports', 'AI-powered smart suggestions'].map((f, i) => (
@@ -246,7 +249,7 @@ function Step1({ formData, updateFormData }: any) {
       <div className="flex items-start gap-2.5 p-3 rounded-xl bg-gray-800/50 border border-white/5">
         <input type="checkbox" id="tos" checked={formData.tos || false} onChange={e => updateFormData({ tos: e.target.checked })} className="mt-0.5" />
         <label htmlFor="tos" className="text-xs text-gray-400">
-          I agree to FoodBridge's <a href="#" className="text-teal-400">Terms of Service</a> and confirm that all information provided is accurate.
+          I agree to RescueBite's <a href="#" className="text-green-400">Terms of Service</a> and confirm that all information provided is accurate.
         </label>
       </div>
     </div>

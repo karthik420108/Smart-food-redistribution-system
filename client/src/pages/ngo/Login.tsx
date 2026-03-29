@@ -7,6 +7,7 @@ import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { useNgoStore } from '../../store/ngoStore';
 import { useVolunteerStore } from '../../store/volunteerStore';
+import { Logo } from '../../components/Logo';
 
 export function NgoLogin() {
   const [email, setEmail] = useState('');
@@ -102,13 +103,7 @@ export function NgoLogin() {
         >
           {/* Logo */}
           <div className="flex items-center gap-3 mb-7">
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${isVolunteerPath ? 'from-purple-400 to-purple-600' : 'from-teal-400 to-teal-600'} flex items-center justify-center`}>
-              <span className="text-white font-bold">FB</span>
-            </div>
-            <div>
-              <div className="font-bold text-white text-sm">FoodBridge</div>
-              <div className="text-xs text-gray-400">{isVolunteerPath ? 'Volunteer Portal' : 'NGO / Admin Portal'}</div>
-            </div>
+            <Logo variant={isVolunteerPath ? 'volunteer' : 'ngo'} size="md" />
           </div>
 
           <Link to="/" className="text-xs text-gray-600 hover:text-gray-400 mb-5 flex items-center gap-1">← Back to portal selection</Link>

@@ -8,6 +8,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface ProfileFormData {
   full_name: string;
@@ -18,6 +19,7 @@ interface ProfileFormData {
 }
 
 export function Profile() {
+  const { isDark } = useTheme();
   const { user, donorProfile, setDonorProfile, signOut } = useAuthStore();
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<'info' | 'hours' | 'security'>('info');

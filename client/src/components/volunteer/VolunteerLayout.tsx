@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Home, ClipboardList, User, LogOut, Menu, X } from 'lucide-react';
+import { Logo } from '../Logo';
 import { supabase } from '../../lib/supabase';
 import { useVolunteerStore } from '../../store/volunteerStore';
 
@@ -33,13 +34,7 @@ export function VolunteerLayout() {
       <aside className="hidden md:flex flex-col w-56 bg-gray-900 border-r border-white/5 flex-shrink-0">
         {/* Logo */}
         <div className="flex items-center gap-3 p-5 border-b border-white/5">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center">
-            <span className="text-white font-bold text-sm">V</span>
-          </div>
-          <div>
-            <div className="font-bold text-sm text-white">FoodBridge</div>
-            <div className="text-xs text-orange-400">Volunteer Portal</div>
-          </div>
+          <Logo variant="volunteer" size="md" />
         </div>
 
         {/* Profile Chip */}

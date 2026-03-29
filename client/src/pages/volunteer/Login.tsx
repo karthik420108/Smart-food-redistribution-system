@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import { supabase } from '../../lib/supabase';
 import { useVolunteerStore } from '../../store/volunteerStore';
+import { Logo } from '../../components/Logo';
 
 export function VolunteerLogin() {
   const [email, setEmail] = useState('');
@@ -87,13 +88,7 @@ export function VolunteerLogin() {
         >
           {/* Logo */}
           <div className="flex items-center gap-3 mb-7">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-400 to-purple-600 flex items-center justify-center">
-              <span className="text-white font-bold">V</span>
-            </div>
-            <div>
-              <div className="font-bold text-white text-sm">FoodBridge</div>
-              <div className="text-xs text-purple-400">Volunteer Portal</div>
-            </div>
+            <Logo variant="volunteer" size="md" />
           </div>
 
           <Link

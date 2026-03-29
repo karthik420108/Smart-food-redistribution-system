@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Shield, MapPin, Trophy, Zap, Award, Star } from 'lucide-react';
+import { ArrowRight, Sparkles, Shield, MapPin, Trophy, Zap, Award, Star, HeartHandshake } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 const PORTALS = [
@@ -194,13 +194,16 @@ export function PortalSelector() {
 
       {/* ── Header ── */}
       <header className="relative z-10 flex items-center justify-between px-6 py-5 max-w-7xl mx-auto">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-400 to-teal-600 flex items-center justify-center shadow-lg shadow-teal-500/30">
-            <span className="text-white font-black text-sm">FB</span>
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-green-500 flex items-center justify-center shadow-lg shadow-green-500/30 border-b-2 border-green-700">
+            <HeartHandshake className="text-white" size={20} strokeWidth={2.5} />
           </div>
-          <div>
-            <div className="font-bold text-white leading-none">FoodBridge</div>
-            <div className="text-xs text-teal-400 leading-none mt-0.5">Surplus Food Redistribution Network</div>
+          <div className="flex flex-col justify-center">
+            <div className="flex items-baseline gap-0.5">
+              <span className="font-black text-white text-xl tracking-tight uppercase">Rescue</span>
+              <span className="font-black text-green-500 text-xl tracking-tight uppercase">Bite</span>
+            </div>
+            <div className="text-[9px] text-gray-500 font-bold uppercase tracking-widest leading-none mt-1">Surplus Redistribution Network</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -395,7 +398,7 @@ export function PortalSelector() {
 
       {/* ── Footer ── */}
       <footer className="relative z-10 text-center pb-8 text-xs text-gray-700">
-        © 2025 FoodBridge · Built to eliminate food waste, one meal at a time.
+        © 2026 RescueBite · Built to eliminate food waste, one meal at a time.
       </footer>
     </div>
   );
