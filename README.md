@@ -1,9 +1,10 @@
 # RescueBite — Real-time Food Redistribution Platform
 
 ---
-
-Demo Vedio Link - https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC_QxHVl3lS9
-
+###Admin dashboard repo link: https://github.com/karthik420108/smart_food_distribution-admin_panel.git
+###Demo Vedio Link - https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC_QxHVl3lS9
+###Deployment Link (for admin ) - smart-food-distribution-admin-panel-sfo7-lwro2cg25.vercel.app
+###Deployment Link (for donor / NGO / volunteer) - nill
 ---
 
 ## 🚀 Innovation Points
