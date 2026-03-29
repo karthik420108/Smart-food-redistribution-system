@@ -6,6 +6,14 @@ Demo Vedio Link - https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC
 
 ---
 
+#Innovation Points
+- Expiry-Urgency Adaptive Discovery Feed
+- Global impact map of a donor,ngo
+- Realtime tracking of volunteer availability for food collection
+- Customised smart priority based food dispatch scheduling sequences
+- Competetive leaderboard profile generation for NGO and DONORS
+---
+
 Short Description :- 
 
 Our web application works as a bridge between food donors and NGOs.
