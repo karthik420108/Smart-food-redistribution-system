@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import api from '../lib/api';
+import { useAuthStore } from './authStore';
 
 export interface NgoOrganization {
   id: string;
@@ -110,6 +111,7 @@ export interface Analytics {
   total_volunteers: number;
   co2_saved_kg: number;
   food_value_saved_inr: number;
+  points: number;
 }
 
 interface NgoState {
@@ -159,12 +161,23 @@ export const useNgoStore = create<NgoState>((set, get) => ({
   setNgo: (ngo) => set({ ngo }),
 
   fetchNgo: async () => {
+    // Skip if already loading or no user
+    const { user } = useAuthStore.getState();
+    if (!user || get().loading) return;
+
+    // Skip if role is not ngo_admin or ngo_volunteer
+    const role = user.user_metadata?.role;
+    if (role !== 'ngo_admin' && role !== 'ngo_volunteer') return;
+
     set({ loading: true });
     try {
+      // If volunteer, we might need a different profile endpoint or just skip ifNGO info not needed
+      // For now, let's try-catch - if it's 404, we just clear the ngo state
       const res = await api.get('/ngo/me');
       set({ ngo: res.data.data, loading: false });
-    } catch {
-      set({ loading: false });
+    } catch (err: any) {
+      console.warn('fetchNgo failed:', err.message);
+      set({ ngo: null, loading: false });
     }
   },
 

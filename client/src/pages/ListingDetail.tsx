@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MapPin, Clock, ArrowLeft, Heart, MessageCircle, ShieldCheck, AlertCircle, Loader2, CheckCircle2 } from 'lucide-react';
+import { MapPin, Clock, ArrowLeft, Heart, MessageCircle, ShieldCheck, AlertCircle, Loader2, CheckCircle2, User, Phone, Shield } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { MockMap } from '../components/MockMap';
 import toast from 'react-hot-toast';
@@ -13,8 +13,7 @@ export function ListingDetail() {
   const [claims, setClaims] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [verifyingClaimId, setVerifyingClaimId] = useState<string | null>(null);
-  const [otp, setOtp] = useState('');
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [volunteerLocation, setVolunteerLocation] = useState<{lat: number, lng: number} | null>(null);
 
   const fetchDetails = async () => {
     try {
@@ -28,21 +27,42 @@ export function ListingDetail() {
       if (listingError) throw listingError;
       setListing(listingData);
 
-      // Fetch Claims
+      // Fetch Claims with Volunteer Tasks and NGO details
       const { data: claimsData, error: claimsError } = await supabase
-        .from('claims')
+        .from('ngo_food_claims')
         .select(`
           *,
-          receivers (
-            full_name,
-            organization_name,
-            type
+          ngo:ngo_organizations (
+            org_name,
+            phone,
+            status
+          ),
+          tasks:volunteer_tasks (
+            id,
+            status,
+            volunteer:ngo_volunteers (
+              id,
+              full_name,
+              phone,
+              current_lat,
+              current_lng,
+              profile_photo_url
+            )
           )
         `)
         .eq('listing_id', id);
       
       if (claimsError) throw claimsError;
       setClaims(claimsData || []);
+
+      // If there's an active volunteer, set initial location
+      const activeTask = claimsData?.[0]?.tasks?.[0];
+      if (activeTask?.volunteer?.current_lat) {
+        setVolunteerLocation({
+          lat: activeTask.volunteer.current_lat,
+          lng: activeTask.volunteer.current_lng
+        });
+      }
     } catch (err: any) {
       toast.error(err.message || 'Failed to fetch details');
       navigate('/manage-listings');
@@ -52,50 +72,40 @@ export function ListingDetail() {
   };
 
   useEffect(() => {
-    if (id) fetchDetails();
-  }, [id]);
+    if (!id) return;
+    fetchDetails();
 
-  const handleVerifyOtp = async () => {
-    if (otp.length !== 6) {
-      toast.error('Enter a valid 6-digit OTP');
-      return;
-    }
+    // Subscribe to claim and task updates
+    const channel = supabase
+      .channel(`listing_tracking_${id}`)
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'ngo_food_claims',
+        filter: `listing_id=eq.${id}`
+      }, () => {
+        fetchDetails();
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'ngo_volunteers'
+      }, (payload) => {
+        // Only update if this volunteer is assigned to one of our claims
+        const isAssigned = claims.some(c => c.tasks?.[0]?.volunteer?.id === payload.new.id);
+        if (isAssigned && payload.new.current_lat) {
+          setVolunteerLocation({
+            lat: payload.new.current_lat,
+            lng: payload.new.current_lng
+          });
+        }
+      })
+      .subscribe();
 
-    setIsVerifying(true);
-    try {
-      // In a real system, we'd call a backend function to verify 
-      // but for this MVP, we'll check against the claim's verification_code
-      const claim = claims.find(c => c.id === verifyingClaimId);
-      
-      if (claim.verification_code !== otp) {
-        throw new Error('Invalid verification code. Please check with the receiver.');
-      }
-
-      // 1. Update claim status
-      const { error: claimErr } = await supabase
-        .from('claims')
-        .update({ status: 'confirmed', verified_at: new Date().toISOString() })
-        .eq('id', verifyingClaimId);
-      
-      if (claimErr) throw claimErr;
-
-      // 2. Check if listing is fully claimed/completed
-      const totalClaimed = claims.reduce((sum, c) => sum + (c.id === verifyingClaimId ? c.quantity_claimed : (c.status === 'confirmed' ? c.quantity_claimed : 0)), 0);
-      
-      if (totalClaimed >= listing.quantity) {
-          await supabase.from('food_listings').update({ status: 'completed' }).eq('id', id);
-      }
-
-      toast.success('Pickup verified successfully!');
-      setVerifyingClaimId(null);
-      setOtp('');
-      fetchDetails();
-    } catch (err: any) {
-      toast.error(err.message || 'Verification failed');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [id, claims.length]);
 
   if (isLoading) {
     return (
@@ -107,6 +117,11 @@ export function ListingDetail() {
   }
 
   const location = { lat: listing?.lat || 19.0760, lng: listing?.lng || 72.8777 };
+  const markers: any[] = [{ ...location, label: 'Your Location', type: 'donor' }];
+  
+  if (volunteerLocation) {
+    markers.push({ ...volunteerLocation, label: 'Volunteer', type: 'receiver' });
+  }
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto pb-20">
@@ -171,47 +186,84 @@ export function ListingDetail() {
 
             <div className="space-y-4">
               {claims.length > 0 ? claims.map((claim) => (
-                <div key={claim.id} className="p-6 rounded-2xl border-2 hover:border-primary/30 transition-all bg-gray-50/30 dark:bg-gray-900/10 flex flex-col md:flex-row justify-between items-center gap-6">
-                  <div className="flex items-center gap-5 w-full md:w-auto">
-                    <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                        <Heart className="w-7 h-7" />
+                <div key={claim.id} className="space-y-4">
+                  <div className="p-6 rounded-2xl border-2 hover:border-primary/30 transition-all bg-gray-50/30 dark:bg-gray-900/10 flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div className="flex items-center gap-5 w-full md:w-auto">
+                      <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                          <Heart className="w-7 h-7" />
+                      </div>
+                      <div>
+                          <h4 className="font-black text-lg">{claim.ngo?.org_name}</h4>
+                          <div className="flex gap-3 mt-1">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">NGO Partner</span>
+                              <span className={`text-[10px] font-black uppercase tracking-wider ${claim.status === 'completed' || claim.status === 'delivered' ? 'text-green-600' : 'text-amber-600'}`}>
+                                  ● {claim.status.replace(/_/g, ' ')}
+                              </span>
+                          </div>
+                      </div>
                     </div>
-                    <div>
-                        <h4 className="font-black text-lg">{claim.receivers?.organization_name || claim.receivers?.full_name}</h4>
-                        <div className="flex gap-3 mt-1">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">{claim.receivers?.type}</span>
-                            <span className={`text-[10px] font-black uppercase tracking-wider ${claim.status === 'confirmed' ? 'text-green-600' : 'text-amber-600'}`}>
-                                ● {claim.status}
-                            </span>
-                        </div>
+
+                    <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
+                      <div className="text-center">
+                          <p className="text-2xl font-black">{claim.quantity_claimed}</p>
+                          <p className="text-[10px] font-black uppercase text-gray-400">{listing.quantity_unit}</p>
+                      </div>
+
+                      {['pending_assignment', 'assigned', 'volunteer_en_route', 'arrived_at_donor'].includes(claim.status) ? (
+                          <button 
+                              onClick={() => setVerifyingClaimId(claim.id)}
+                              className="px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+                          >
+                              <Shield className="w-4 h-4" /> Reveal Handover OTP
+                          </button>
+                      ) : (
+                          <div className="flex items-center gap-2 text-green-600 font-black text-xs uppercase">
+                              <CheckCircle2 className="w-5 h-5" /> {claim.status}
+                          </div>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-8 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 pt-4 md:pt-0">
-                    <div className="text-center">
-                        <p className="text-2xl font-black">{claim.quantity_claimed}</p>
-                        <p className="text-[10px] font-black uppercase text-gray-400">{listing.quantity_unit}</p>
-                    </div>
-
-                    {claim.status === 'pending' ? (
-                        <button 
-                            onClick={() => setVerifyingClaimId(claim.id)}
-                            className="px-6 py-3 bg-primary text-white text-xs font-black uppercase tracking-widest rounded-xl hover:shadow-lg shadow-primary/20 transition-all"
+                  {/* New Volunteer Tracking Card */}
+                  {claim.tasks?.[0] && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="ml-6 p-4 bg-primary/5 rounded-2xl border border-primary/10 flex items-center justify-between"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-full bg-white dark:bg-gray-800 border-2 border-primary/20 flex items-center justify-center overflow-hidden">
+                          {claim.tasks[0].volunteer?.profile_photo_url ? (
+                            <img src={claim.tasks[0].volunteer.profile_photo_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-5 h-5 text-primary" />
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black text-primary uppercase tracking-widest leading-tight">Assigned Volunteer</p>
+                          <h5 className="font-bold text-sm">{claim.tasks[0].volunteer?.full_name}</h5>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center gap-3">
+                        <a 
+                          href={`tel:${claim.tasks[0].volunteer?.phone}`}
+                          className="p-2 bg-white dark:bg-gray-800 rounded-lg border hover:border-primary transition-colors text-gray-600 hover:text-primary"
                         >
-                            Verify Pickup
-                        </button>
-                    ) : (
-                        <div className="flex items-center gap-2 text-green-600 font-black text-xs uppercase">
-                            <CheckCircle2 className="w-5 h-5" /> Verified
+                          <Phone className="w-4 h-4" />
+                        </a>
+                        <div className="px-3 py-1 bg-white dark:bg-gray-800 rounded-full border text-[10px] font-black text-gray-500 uppercase">
+                          {claim.tasks[0].status.replace(/_/g, ' ')}
                         </div>
-                    )}
-                  </div>
+                      </div>
+                    </motion.div>
+                  )}
                 </div>
               )) : (
                 <div className="text-center py-16 text-gray-400 bg-gray-50/50 rounded-2xl border-2 border-dashed">
                    <AlertCircle className="w-12 h-12 mx-auto mb-4 opacity-20" />
                    <p className="font-black uppercase tracking-widest text-sm">No claims recorded yet</p>
-                   <p className="text-xs mt-1">Recipients will appear here once they claim your item.</p>
+                   <p className="text-xs mt-1">NGOs will appear here once they claim your item.</p>
                 </div>
               )}
             </div>
@@ -243,7 +295,7 @@ export function ListingDetail() {
                 <MockMap 
                     className="h-56 rounded-2xl border-2" 
                     center={location}
-                    markers={[{ ...location, label: 'Pickup Point', type: 'donor' }]}
+                    markers={markers}
                 />
             </div>
           </div>
@@ -275,41 +327,33 @@ export function ListingDetail() {
                initial={{ scale: 0.9, y: 20, opacity: 0 }}
                animate={{ scale: 1, y: 0, opacity: 1 }}
                exit={{ scale: 0.9, y: 20, opacity: 0 }}
-               className="bg-white dark:bg-gray-950 p-8 rounded-3xl shadow-2xl max-w-md w-full relative z-10 border-2 border-primary/20"
+               className="bg-white dark:bg-gray-950 p-8 rounded-3xl shadow-2xl max-w-sm w-full relative z-10 border-2 border-primary/20"
              >
-                <div className="text-center space-y-4">
-                    <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <ShieldCheck className="w-8 h-8 text-primary" />
+                <div className="text-center space-y-6">
+                    <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                        <ShieldCheck className="w-10 h-10 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-black">Verify Handover</h3>
-                    <p className="text-sm text-gray-500 font-medium">Please enter the 6-digit secure code provided by the receiver's app to finalize the donation.</p>
+                    <div>
+                      <h3 className="text-2xl font-black">Share Pickup OTP</h3>
+                      <p className="text-sm text-gray-500 font-medium mt-2">Share this code with the volunteer to verify the handover.</p>
+                    </div>
                     
-                    <div className="pt-6">
-                        <input 
-                            type="text" 
-                            maxLength={6}
-                            value={otp}
-                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                            placeholder="0 0 0 0 0 0"
-                            className="w-full text-center text-4xl font-black tracking-[0.5em] py-5 bg-gray-50 dark:bg-gray-900 border-2 rounded-2xl focus:ring-4 focus:ring-primary/20 outline-none transition-all placeholder:text-gray-200"
-                        />
+                    <div className="py-8 bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-primary/30 rounded-3xl">
+                        <div className="text-5xl font-black tracking-[0.3em] text-primary">
+                           {claims.find(c => c.id === verifyingClaimId)?.pickup_otp || '------'}
+                        </div>
                     </div>
 
-                    <div className="flex gap-3 pt-6">
-                        <button 
-                            onClick={() => setVerifyingClaimId(null)}
-                            className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 transition-colors"
-                        >
-                            Cancel
-                        </button>
-                        <button 
-                            disabled={otp.length !== 6 || isVerifying}
-                            onClick={handleVerifyOtp}
-                            className="flex-1 py-4 text-[10px] font-black uppercase tracking-widest bg-primary text-white rounded-xl hover:shadow-lg shadow-primary/20 transition-all disabled:opacity-50"
-                        >
-                            {isVerifying ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : 'Confirm Pickup'}
-                        </button>
-                    </div>
+                    <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest">
+                       Waiting for volunteer to enter code...
+                    </p>
+
+                    <button 
+                        onClick={() => setVerifyingClaimId(null)}
+                        className="w-full py-4 text-xs font-black uppercase tracking-widest bg-gray-100 dark:bg-gray-800 rounded-xl hover:bg-gray-200 transition-colors"
+                    >
+                        Close Terminal
+                    </button>
                 </div>
              </motion.div>
           </div>

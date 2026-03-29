@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Zap, Users, Package, Clock, MapPin, Truck, Star, CheckCircle,
-  X, ChevronDown, AlertCircle, Loader2, Search, Filter
+  Zap, Users, Package, Clock, MapPin, CheckCircle,
+  X, Loader2, Search, Star
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNgoStore } from '../../store/ngoStore';
 import { supabase } from '../../lib/supabase';
+import { socket } from '../../lib/socket';
 
 const STATUS_COLORS: Record<string, string> = {
   available: 'bg-green-400',
@@ -53,14 +54,52 @@ export function TaskAssignmentBoard() {
     };
     init();
 
-    // Real-time updates
+    // Socket real-time listeners
+    const setupSocket = async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      if (userData.user) {
+        const { data: ngo } = await supabase.from('ngo_organizations').select('id').eq('user_id', userData.user.id).single();
+        if (ngo) {
+          socket.connect();
+          socket.emit('join_ngo', ngo.id);
+          
+          socket.on('task_status_updated', (data: any) => {
+            fetchTasks();
+            fetchClaims();
+            // Since we can't reliably find volunteer name here without a refetch, 
+            // just show status update notification
+            toast(`Task updated: ${data.status.replace(/_/g, ' ')}`, { icon: '🔄' });
+          });
+
+          socket.on('task_completed', () => {
+            fetchTasks();
+            fetchClaims();
+            fetchVolunteers();
+            toast.success('Task Completed! Food Delivered.', { icon: '🎉', duration: 5000 });
+          });
+
+          socket.on('volunteer_availability_changed', () => {
+            fetchVolunteers();
+          });
+        }
+      }
+    };
+    setupSocket();
+
+    // Real-time updates (Supabase)
     const channel = supabase.channel('task-board')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ngo_food_claims' }, () => fetchClaims())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'ngo_volunteers' }, () => fetchVolunteers())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'volunteer_tasks' }, () => { fetchTasks(); fetchClaims(); })
       .subscribe();
 
-    return () => { supabase.removeChannel(channel); };
+    return () => { 
+      supabase.removeChannel(channel); 
+      socket.off('task_status_updated');
+      socket.off('task_completed');
+      socket.off('volunteer_availability_changed');
+      socket.disconnect();
+    };
   }, []);
 
   const pendingClaims = claims.filter(c => c.status === 'pending_assignment');

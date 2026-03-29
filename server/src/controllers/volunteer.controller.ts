@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { supabase } from '../lib/supabase';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { io } from '../index';
+import { createNotification } from '../utils/notifications';
 
 // ===================== AUTH =====================
 export const volunteerSetupPin = async (req: Request, res: Response) => {
@@ -130,7 +131,7 @@ export const getActiveTask = async (req: AuthenticatedRequest, res: Response) =>
       .select(`
         *,
         ngo_food_claims(id, pickup_otp, quantity_claimed, quantity_unit, notes,
-          food_listings(title, images, food_type, expiry_time, pickup_address, pickup_lat, pickup_lng, dietary_tags)),
+          food_listings(title, images, category, expiry_datetime, pickup_address, lat, lng, tags)),
         ngo_organizations(org_name, primary_address)
       `)
       .eq('volunteer_id', (v as any)?.id)
@@ -155,14 +156,18 @@ export const getVolunteerTasks = async (req: AuthenticatedRequest, res: Response
       .from('volunteer_tasks')
       .select(`
         *,
-        ngo_food_claims(quantity_claimed, quantity_unit, food_listings(title, images, food_type))
+        ngo_food_claims(quantity_claimed, quantity_unit, food_listings(title, images, category))
       `)
       .eq('volunteer_id', (v as any)?.id)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+       console.error('getActiveTasks Error:', error);
+       throw error;
+    }
     res.json({ success: true, data });
   } catch (error: any) {
+    console.error('getActiveTasks Catch Error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -239,6 +244,13 @@ export const updateTaskStatus = async (req: AuthenticatedRequest, res: Response)
     // Notify NGO
     io.to(`ngo_${(data as any).ngo_id}`).emit('task_status_updated', { task_id: id, status, volunteer_id: (data as any).volunteer_id });
 
+    // Notify Donor
+    const { data: claimData } = await supabase.from('ngo_food_claims').select('food_listings(donor_id)').eq('id', (data as any).claim_id).single();
+    const donorId = (claimData as any)?.food_listings?.donor_id;
+    if (donorId) {
+      io.to(`donor_${donorId}`).emit('task_status_changed', { task_id: id, status });
+    }
+
     res.json({ success: true, data });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
@@ -264,7 +276,7 @@ export const verifyOtp = async (req: AuthenticatedRequest, res: Response) => {
 
     const { data: claim } = await supabase
       .from('ngo_food_claims')
-      .select('pickup_otp, pickup_otp_verified')
+      .select('pickup_otp, pickup_otp_verified, listing_id, food_listings(donor_id)')
       .eq('id', (task as any).claim_id)
       .single();
 
@@ -280,7 +292,11 @@ export const verifyOtp = async (req: AuthenticatedRequest, res: Response) => {
 
     // Mark OTP verified
     await supabase.from('ngo_food_claims')
-      .update({ pickup_otp_verified: true, updated_at: new Date().toISOString() })
+      .update({ 
+        pickup_otp_verified: true, 
+        status: 'picked_up', 
+        updated_at: new Date().toISOString() 
+      })
       .eq('id', (task as any).claim_id);
 
     // Update task status
@@ -288,10 +304,76 @@ export const verifyOtp = async (req: AuthenticatedRequest, res: Response) => {
       .update({ status: 'otp_verified', updated_at: new Date().toISOString() })
       .eq('id', id);
 
-    // Notify NGO
-    io.to(`ngo_${(task as any).ngo_id}`).emit('otp_verified', { task_id: id });
+    // Get claim quantity for points
+    const { data: claimDetails } = await supabase
+      .from('ngo_food_claims')
+      .select('quantity_claimed')
+      .eq('id', (task as any).claim_id)
+      .single();
 
-    res.json({ success: true, message: 'OTP verified successfully!' });
+    const kg = (claimDetails as any)?.quantity_claimed || 1;
+    const pointsAwarded = Math.round(kg * 10); // Donor gets 10 pts per kg
+    const volunteerPoints = 5; // Fixed per task for now
+    const ngoPoints = 50; // Fixed per successful collection
+
+    // Update food listing status to 'completed' for the donor's cycle
+    // Note: In a multi-claim scenario, we should check if all portions are picked up.
+    await supabase.from('food_listings')
+      .update({ status: 'completed', updated_at: new Date().toISOString() })
+      .eq('id', (claim as any).listing_id);
+
+    // Award Points - Use RPC for atomic updates
+    const donorIdFromListing = (claim as any).food_listings?.donor_id;
+    if (donorIdFromListing) {
+       // Get actual user_id from donor table first
+       const { data: donorOrg } = await supabase.from('donors').select('user_id').eq('id', donorIdFromListing).single();
+       if (donorOrg?.user_id) {
+         await supabase.rpc('award_points', { 
+           user_id_val: donorOrg.user_id, 
+           points_val: pointsAwarded, 
+           target_table: 'donors' 
+         });
+       }
+    }
+
+    // Award points to NGO and Volunteer
+    const { data: ngoProfile } = await supabase.from('ngo_organizations').select('user_id').eq('id', (task as any).ngo_id).single();
+    if (ngoProfile?.user_id) {
+      await supabase.rpc('award_points', { 
+        user_id_val: ngoProfile.user_id, 
+        points_val: ngoPoints, 
+        target_table: 'ngo_organizations' 
+      });
+    }
+
+    const { data: volProfile } = await supabase.from('ngo_volunteers').select('user_id').eq('id', (task as any).volunteer_id).single();
+    if (volProfile?.user_id) {
+      await supabase.rpc('award_points', { 
+        user_id_val: volProfile.user_id, 
+        points_val: volunteerPoints, 
+        target_table: 'ngo_volunteers' 
+      });
+    }
+
+    // Real-time Persistent Notifications
+    Promise.all([
+        // To NGO
+        createNotification({
+            userId: (task as any).ngo_id,
+            type: 'otp_verified',
+            message: `OTP verified for task #${(id as string).split('-')[0]}. Food is officially picked up!`,
+            metadata: { task_id: id, role: 'ngo', points_earned: ngoPoints }
+        }),
+        // To Donor
+        donorIdFromListing ? createNotification({
+            userId: donorIdFromListing,
+            type: 'otp_verified',
+            message: `Food picked up! Your donation of "${(claim as any).food_listings?.title || 'food'}" is now in transit.`,
+            metadata: { listing_id: (claim as any).listing_id, role: 'donor', points_earned: pointsAwarded }
+        }) : Promise.resolve()
+    ]).catch(err => console.error('Pickup notification error:', err));
+
+    res.json({ success: true, message: 'OTP verified successfully!', points_awarded: pointsAwarded });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message });
   }
@@ -344,8 +426,23 @@ export const completeTask = async (req: AuthenticatedRequest, res: Response) => 
       p_kg: actual_kg_collected,
     }).maybeSingle();
 
-    // Notify NGO
-    io.to(`ngo_${(task as any).ngo_id}`).emit('task_completed', { task_id: id, volunteer_id: (task as any).volunteer_id, kg: actual_kg_collected });
+    // Real-time Persistent Notifications
+    Promise.all([
+        // To NGO
+        createNotification({
+            userId: (task as any).ngo_id,
+            type: 'task_status_changed',
+            message: `Redistribution Complete! ${actual_kg_collected}kg has been delivered.`,
+            metadata: { task_id: id, role: 'ngo', status: 'completed' }
+        }),
+        // To Donor (Implicit via global stats usually, but nice to notify)
+        createNotification({
+            userId: (task as any).listing_snapshot?.donor_id || '',
+            type: 'points_awarded',
+            message: `Success! Your donation has reached its destination. Thank you for your impact!`,
+            metadata: { role: 'donor', impact_kg: actual_kg_collected }
+        }).catch(() => {}) // Fallback if donor_id missing in snapshot
+    ]).catch(err => console.error('Completion notification error:', err));
 
     res.json({ success: true, data: task, meals_estimated: Math.floor(actual_kg_collected * 2.5) });
   } catch (error: any) {
@@ -379,6 +476,24 @@ export const updateLocation = async (req: AuthenticatedRequest, res: Response) =
       task_id,
       lat, lng,
     });
+
+    // Also notify donor if a task_id is present
+    if (task_id) {
+        const { data: taskData } = await supabase
+            .from('volunteer_tasks')
+            .select('ngo_food_claims(food_listings(donor_id))')
+            .eq('id', task_id)
+            .single();
+        
+        const donorId = (taskData as any)?.ngo_food_claims?.food_listings?.donor_id;
+        if (donorId) {
+            io.to(`donor_${donorId}`).emit('volunteer_location_update', {
+                volunteer_id: (v as any)?.id,
+                task_id,
+                lat, lng
+            });
+        }
+    }
 
     res.json({ success: true });
   } catch (error: any) {

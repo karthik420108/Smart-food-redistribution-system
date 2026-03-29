@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import {
   HeartHandshake,
@@ -8,7 +8,8 @@ import {
   LineChart,
   Bell,
   UserCircle,
-  LogOut
+  LogOut,
+  Home
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -16,6 +17,7 @@ import { twMerge } from 'tailwind-merge';
 export function Layout() {
   const { signOut, user } = useAuthStore();
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navItems = [
     { name: 'Dashboard',         path: '/donor',                   icon: LayoutDashboard },
@@ -28,6 +30,7 @@ export function Layout() {
 
   const handleLogout = () => {
     signOut();
+    navigate('/login');
   };
 
   return (
@@ -85,6 +88,13 @@ export function Layout() {
               <span className="text-xs text-primary font-medium">Verified Donor</span>
             </div>
           </div>
+          <Link
+            to="/"
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-700 dark:hover:text-gray-300 rounded-md transition-colors mb-1"
+          >
+            <Home className="w-5 h-5" />
+            Role Selection
+          </Link>
           <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"

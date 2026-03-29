@@ -26,26 +26,24 @@ export function Login() {
   const onSubmit = async (data: LoginValues) => {
     setIsLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password
       });
-      const json = await res.json();
 
-      if (!res.ok) throw new Error(json.error || 'Failed to login');
-
-      // Sync auth state locally
-      if (json.data?.session) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token: json.data.session.access_token,
-          refresh_token: json.data.session.refresh_token,
-        });
-        if (sessionError) throw sessionError;
+      if (authError || !authData.user) {
+        throw new Error(authError?.message || 'Failed to login');
       }
 
-      if (json.data?.user && json.data?.profile) {
-        await loginSuccess(json.data.user, json.data.profile, json.data.session);
+      // Fetch profile locally to avoid API locks
+      const { data: profileData } = await supabase
+        .from('donors')
+        .select('*')
+        .eq('user_id', authData.user.id)
+        .maybeSingle();
+
+      if (profileData) {
+        await loginSuccess(authData.user, profileData, authData.session);
       }
 
       navigate('/donor');

@@ -1,10 +1,21 @@
 import { supabase } from './supabase';
 
-const API_URL = 'http://127.0.0.1:5000/api';
+const API_URL = 'http://localhost:5000/api';
+
+let activeSessionPromise: Promise<any> | null = null;
+
+async function getAccessToken() {
+  if (!activeSessionPromise) {
+    activeSessionPromise = supabase.auth.getSession().finally(() => {
+      activeSessionPromise = null;
+    });
+  }
+  const { data: { session } } = await activeSessionPromise;
+  return session?.access_token;
+}
 
 export async function apiFetch(endpoint: string, options: RequestInit = {}) {
-  const { data: { session } } = await supabase.auth.getSession();
-  const token = session?.access_token;
+  const token = await getAccessToken();
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
@@ -23,8 +34,7 @@ export async function apiFetch(endpoint: string, options: RequestInit = {}) {
 // Axios-compatible interface for store usage
 const api = {
   get: async (url: string, config?: any) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = await getAccessToken();
     const response = await fetch(`${API_URL}${url}`, {
       headers: {
         'Content-Type': 'application/json',
@@ -37,8 +47,7 @@ const api = {
     return { data: json };
   },
   post: async (url: string, data: any, config?: any) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = await getAccessToken();
     const response = await fetch(`${API_URL}${url}`, {
       method: 'POST',
       headers: {
@@ -53,8 +62,7 @@ const api = {
     return { data: json };
   },
   put: async (url: string, data: any, config?: any) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = await getAccessToken();
     const response = await fetch(`${API_URL}${url}`, {
       method: 'PUT',
       headers: {
@@ -69,8 +77,7 @@ const api = {
     return { data: json };
   },
   delete: async (url: string, config?: any) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const token = session?.access_token;
+    const token = await getAccessToken();
     const response = await fetch(`${API_URL}${url}`, {
       method: 'DELETE',
       headers: {

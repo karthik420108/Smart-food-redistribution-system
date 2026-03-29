@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useVolunteerStore } from '../../store/volunteerStore';
+import { socket } from '../../lib/socket';
 
 const STATUS_STEPS = [
   { key: 'assigned', label: 'Task Assigned' },
@@ -49,6 +50,33 @@ export function VolunteerHome() {
     fetchActiveTask();
   }, []);
 
+  useEffect(() => {
+    // Socket real-time listeners
+    if (volunteer?.id) {
+      socket.connect();
+      socket.emit('join_volunteer', volunteer.id);
+      
+      socket.on('task_assigned', (data: any) => {
+        toast.success(`New Task Assigned! ${data.listing_snapshot?.title || 'Food Pickup'}`, {
+          icon: '🚚',
+          duration: 6000,
+        });
+        fetchActiveTask();
+        fetchProfile();
+      });
+
+      socket.on('task_updated', () => {
+        fetchActiveTask();
+      });
+    }
+
+    return () => {
+      socket.off('task_assigned');
+      socket.off('task_updated');
+      socket.disconnect();
+    };
+  }, [volunteer?.id]);
+
   // Start GPS pinging when on task
   useEffect(() => {
     if (activeTask && activeTask.status !== 'completed') {
@@ -80,11 +108,13 @@ export function VolunteerHome() {
     const next = NEXT_STATUS[activeTask.status];
     if (!next) return;
     setUpdating(true);
+    const loadingToast = toast.loading(`Updating status to ${next.replace(/_/g, ' ')}...`);
     try {
       await updateTaskStatus(activeTask.id, next);
-      toast.success('Status updated!');
+      toast.success(`Success: ${NEXT_LABEL[activeTask.status] || 'Status updated'}`, { id: loadingToast });
+      fetchActiveTask();
     } catch (err: any) {
-      toast.error(err.message || 'Update failed');
+      toast.error(err.message || 'Update failed', { id: loadingToast });
     } finally {
       setUpdating(false);
     }
@@ -183,10 +213,10 @@ export function VolunteerHome() {
                   <Package size={10} />
                   {activeTask.ngo_food_claims?.quantity_claimed} {activeTask.ngo_food_claims?.quantity_unit}
                 </div>
-                {listing?.expiry_time && (
+                {listing?.expiry_datetime && (
                   <div className="text-xs text-red-400 mt-0.5 flex items-center gap-1">
                     <Clock size={10} />
-                    Expires {new Date(listing.expiry_time).toLocaleTimeString()}
+                    Expires {new Date(listing.expiry_datetime).toLocaleTimeString()}
                   </div>
                 )}
               </div>

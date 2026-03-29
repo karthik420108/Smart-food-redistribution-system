@@ -50,28 +50,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     
     set({ loading: true, isInitialized: true });
     
-    // Check active session
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session?.user) {
-      set({ user: session.user });
+    try {
+      // Check active session
+      const { data: { session } } = await supabase.auth.getSession();
       
-      // Only fetch donor profile if user is a donor
-      const role = session.user.user_metadata?.role;
-      if (role !== 'ngo_admin' && role !== 'ngo_volunteer') {
-        const { data, error } = await supabase
-          .from('donors')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .limit(1);
-          
-        if (data && data.length > 0 && !error) {
-          set({ donorProfile: data[0] as DonorProfile });
+      if (session?.user) {
+        set({ user: session.user });
+        
+        // Only fetch donor profile if user is a donor
+        const role = session.user.user_metadata?.role;
+        if (role !== 'ngo_admin' && role !== 'ngo_volunteer') {
+          const { data, error } = await supabase
+            .from('donors')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .limit(1);
+            
+          if (data && data.length > 0 && !error) {
+            set({ donorProfile: data[0] as DonorProfile });
+          }
         }
       }
+    } catch (error) {
+       console.error('Auth initialization error:', error);
+    } finally {
+       set({ loading: false });
     }
-    
-    set({ loading: false });
 
     // Listen to changes
     supabase.auth.onAuthStateChange(async (_event, session) => {

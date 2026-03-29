@@ -8,7 +8,9 @@ export const getListings = async (req: AuthenticatedRequest, res: Response) => {
 
     let query = supabase.from('food_listings').select('*, donors(full_name, address, lat, lng)', { count: 'exact' });
 
-    if (status) query = query.eq('status', status);
+    // Filter for available and fresh food only
+    query = query.eq('status', 'available').gt('expiry_datetime', new Date().toISOString());
+
     if (category) query = query.eq('category', category);
     if (search) query = query.ilike('title', `%${search}%`);
 

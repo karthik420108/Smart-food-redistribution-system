@@ -49,12 +49,12 @@ export interface ActiveTask {
     food_listings?: {
       title: string;
       images?: string[];
-      food_type?: string;
-      expiry_time?: string;
+      category?: string;
+      expiry_datetime?: string;
       pickup_address?: string;
-      pickup_lat?: number;
-      pickup_lng?: number;
-      dietary_tags?: string[];
+      lat?: number;
+      lng?: number;
+      tags?: string[];
       donors?: {
         full_name: string;
         phone: string;

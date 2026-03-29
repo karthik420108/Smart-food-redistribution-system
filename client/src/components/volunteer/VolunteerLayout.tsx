@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Home, ClipboardList, User, MessageCircle, LogOut, Bell, Menu, X } from 'lucide-react';
+import { Home, ClipboardList, User, LogOut, Menu, X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import { useVolunteerStore } from '../../store/volunteerStore';
 
@@ -24,7 +24,7 @@ export function VolunteerLayout() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/ngo/login');
+    navigate('/volunteer/login');
   };
 
   return (
@@ -85,7 +85,13 @@ export function VolunteerLayout() {
         </nav>
 
         {/* Logout */}
-        <div className="p-3 border-t border-white/5">
+        <div className="p-3 border-t border-white/5 space-y-1">
+          <Link
+            to="/"
+            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-all w-full text-sm"
+          >
+            <Home size={17} />Role Selection
+          </Link>
           <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all w-full text-sm">
             <LogOut size={17} />Logout
           </button>
@@ -128,6 +134,9 @@ export function VolunteerLayout() {
                 <button onClick={handleLogout} className="flex items-center gap-3 px-3 py-2.5 text-red-400 text-sm w-full">
                   <LogOut size={17} />Logout
                 </button>
+                <Link to="/" className="flex items-center gap-3 px-3 py-2.5 text-gray-500 hover:text-gray-300 text-sm w-full">
+                  <Home size={17} />Role Selection
+                </Link>
               </div>
             </motion.div>
           )}

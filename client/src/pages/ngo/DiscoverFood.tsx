@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Search, Package, Clock, MapPin, Heart, Loader2, Filter, ChevronDown } from 'lucide-react';
+import { Search, Package, MapPin, Heart, Loader2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useNgoStore } from '../../store/ngoStore';
 import api from '../../lib/api';
@@ -8,6 +9,7 @@ import api from '../../lib/api';
 const FOOD_TYPES = ['all', 'cooked', 'raw', 'packaged', 'baked', 'beverages', 'dairy'];
 
 export function DiscoverFood() {
+  const navigate = useNavigate();
   const { createClaim } = useNgoStore();
   const [listings, setListings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -31,7 +33,7 @@ export function DiscoverFood() {
 
   const filtered = listings.filter(l => {
     const matchSearch = !search || l.title.toLowerCase().includes(search.toLowerCase()) || l.pickup_address?.toLowerCase().includes(search.toLowerCase());
-    const matchType = typeFilter === 'all' || l.food_type === typeFilter;
+    const matchType = typeFilter === 'all' || l.category === typeFilter;
     return matchSearch && matchType;
   });
 
@@ -41,7 +43,10 @@ export function DiscoverFood() {
     try {
       const result = await createClaim({ listing_id: claimModal.id, quantity_claimed: parseFloat(qtyToClaim), quantity_unit: claimModal.quantity_unit || 'kg' });
       if (result.success) {
-        toast.success('Claim submitted! Go to Claims to assign a volunteer.');
+        toast.success('Claim submitted! Redirecting to assign a volunteer...');
+        setTimeout(() => {
+          navigate('/ngo/tasks');
+        }, 1500);
         setClaimModal(null);
       } else {
         toast.error(result.error || 'Claim failed');
@@ -111,13 +116,13 @@ export function DiscoverFood() {
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-5xl">🍱</div>
                 )}
-                {listing.expiry_time && (
+                {listing.expiry_datetime && (
                   <div className="absolute top-2 right-2 bg-gray-900/80 backdrop-blur px-2 py-0.5 rounded-lg">
-                    <ExpiryBadge time={listing.expiry_time} />
+                    <ExpiryBadge time={listing.expiry_datetime} />
                   </div>
                 )}
                 <div className="absolute top-2 left-2 bg-gray-900/80 backdrop-blur px-2 py-0.5 rounded-lg">
-                  <span className="text-xs text-white capitalize">{listing.food_type || 'food'}</span>
+                  <span className="text-xs text-white capitalize">{listing.category || 'food'}</span>
                 </div>
               </div>
 
@@ -125,7 +130,7 @@ export function DiscoverFood() {
               <div className="p-4">
                 <div className="text-sm font-semibold text-white mb-1 line-clamp-1">{listing.title}</div>
                 <div className="flex items-center gap-3 text-xs text-gray-400 mb-3">
-                  <span className="flex items-center gap-1"><Package size={10} />{listing.quantity_available} {listing.quantity_unit}</span>
+                  <span className="flex items-center gap-1"><Package size={10} />{listing.quantity} {listing.quantity_unit}</span>
                   <span className="flex items-center gap-1 truncate"><MapPin size={10} />{listing.pickup_address?.substring(0, 25) || '—'}</span>
                 </div>
                 {listing.dietary_tags?.length > 0 && (
@@ -136,7 +141,7 @@ export function DiscoverFood() {
                   </div>
                 )}
                 <button
-                  onClick={() => { setClaimModal(listing); setQtyToClaim(String(listing.quantity_available)); }}
+                  onClick={() => { setClaimModal(listing); setQtyToClaim(String(listing.quantity)); }}
                   disabled={claimingId === listing.id}
                   className="w-full bg-teal-600 hover:bg-teal-500 text-white py-2 rounded-xl text-xs font-semibold flex items-center justify-center gap-1.5 transition-all disabled:opacity-50"
                 >

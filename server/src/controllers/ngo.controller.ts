@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { io } from '../index';
 import crypto from 'crypto';
+import { createNotification } from '../utils/notifications';
 
 // ===================== REGISTRATION =====================
 export const registerNgo = async (req: Request, res: Response) => {
@@ -263,9 +264,14 @@ export const getClaims = async (req: AuthenticatedRequest, res: Response) => {
       .from('ngo_food_claims')
       .select(`
         *,
-        food_listings(id, title, food_type, quantity, quantity_unit, expiry_time, pickup_address, images, is_urgent),
-        ngo_locations(label, address),
-        volunteer_tasks(id, volunteer_id, status, volunteer:ngo_volunteers(id, full_name, phone, profile_photo_url, availability_status))
+        food_listings(id, title, category, quantity, quantity_unit, expiry_datetime, pickup_address, images, is_urgent),
+        location:ngo_locations(label, address),
+        volunteer_tasks(
+          id, 
+          volunteer_id, 
+          status, 
+          volunteer:ngo_volunteers(id, full_name, phone, profile_photo_url, availability_status)
+        )
       `)
       .eq('ngo_id', ngo?.id)
       .order('created_at', { ascending: false });
@@ -275,9 +281,13 @@ export const getClaims = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+      console.error('getClaims Error:', error);
+      throw error;
+    }
     res.json({ success: true, data });
   } catch (error: any) {
+    console.error('getClaims Catch Error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -285,9 +295,14 @@ export const getClaims = async (req: AuthenticatedRequest, res: Response) => {
 export const createClaim = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: ngo } = await supabase
-      .from('ngo_organizations').select('id, status').eq('user_id', req.user.id).single();
+      .from('ngo_organizations').select('id, status, org_name').eq('user_id', req.user.id).single();
 
-    if (ngo?.status !== 'verified') {
+    if (!ngo) {
+      res.status(404).json({ success: false, error: 'NGO profile not found' });
+      return;
+    }
+
+    if (ngo.status !== 'verified' && ngo.status !== 'pending_verification') {
       res.status(403).json({ success: false, error: 'NGO must be verified to claim food' });
       return;
     }
@@ -308,7 +323,7 @@ export const createClaim = async (req: AuthenticatedRequest, res: Response) => {
       status: 'pending_assignment',
     }).select(`
       *,
-      food_listings(title, pickup_address, pickup_lat, pickup_lng, expiry_time, images)
+      food_listings(title, pickup_address, lat, lng, expiry_datetime, images)
     `).single();
 
     if (error) throw error;
@@ -318,6 +333,17 @@ export const createClaim = async (req: AuthenticatedRequest, res: Response) => {
       p_listing_id: listing_id,
       p_amount: quantity_claimed
     }).maybeSingle();
+
+    // Persistent Notification for Donor
+    const listing = (data as any).food_listings;
+    if (listing?.donor_id) {
+        await createNotification({
+            userId: listing.donor_id,
+            type: 'claim_update',
+            message: `Your food listing "${listing.title}" has been claimed by ${ngo.org_name || 'an NGO'}.`,
+            metadata: { listing_id, role: 'donor', ngo_name: ngo.org_name }
+        });
+    }
 
     res.status(201).json({ success: true, data });
   } catch (error: any) {
@@ -391,8 +417,13 @@ export const logImpact = async (req: AuthenticatedRequest, res: Response) => {
 // ===================== VOLUNTEERS =====================
 export const getVolunteers = async (req: AuthenticatedRequest, res: Response) => {
   try {
-    const { data: ngo } = await supabase
-      .from('ngo_organizations').select('id').eq('user_id', req.user.id).single();
+    const { data: ngo, error: ngoError } = await supabase
+      .from('ngo_organizations').select('id').eq('user_id', req.user.id).maybeSingle();
+
+    if (ngoError || !ngo) {
+      res.status(403).json({ success: false, error: 'NGO profile not found' });
+      return;
+    }
 
     const { status, role, availability_status } = req.query;
     let query = supabase
@@ -548,7 +579,13 @@ export const getTasks = async (req: AuthenticatedRequest, res: Response) => {
       .select(`
         *,
         volunteer:ngo_volunteers(id, full_name, phone, profile_photo_url, vehicle_type, availability_status, current_lat, current_lng),
-        ngo_food_claims(id, pickup_otp, status, quantity_claimed, food_listings(title, images, food_type, expiry_time))
+        claim:ngo_food_claims(
+          id, 
+          pickup_otp, 
+          status, 
+          quantity_claimed, 
+          food_listings(title, images, category, expiry_datetime)
+        )
       `)
       .eq('ngo_id', ngo?.id)
       .order('created_at', { ascending: false });
@@ -557,9 +594,13 @@ export const getTasks = async (req: AuthenticatedRequest, res: Response) => {
     if (volunteer_id) query = query.eq('volunteer_id', volunteer_id as string);
 
     const { data, error } = await query;
-    if (error) throw error;
+    if (error) {
+       console.error('getTasks Error:', error);
+       throw error;
+    }
     res.json({ success: true, data });
   } catch (error: any) {
+    console.error('getTasks Catch Error:', error);
     res.status(500).json({ success: false, error: error.message });
   }
 };
@@ -594,7 +635,7 @@ export const createTask = async (req: AuthenticatedRequest, res: Response) => {
       .single();
 
     const now = new Date();
-    const windowEnd = listing?.expiry_time ? new Date(listing.expiry_time) : new Date(now.getTime() + 4 * 3600000);
+    const windowEnd = listing?.expiry_datetime ? new Date(listing.expiry_datetime) : new Date(now.getTime() + 4 * 3600000);
 
     const { data: task, error } = await supabase.from('volunteer_tasks').insert({
       claim_id,
@@ -604,8 +645,8 @@ export const createTask = async (req: AuthenticatedRequest, res: Response) => {
       listing_snapshot: listing || {},
       donor_snapshot: donor || {},
       pickup_address: listing?.pickup_address || '',
-      pickup_lat: listing?.pickup_lat || 12.9716,
-      pickup_lng: listing?.pickup_lng || 77.5946,
+      pickup_lat: listing?.lat || 12.9716,
+      pickup_lng: listing?.lng || 77.5946,
       pickup_window_start: now.toISOString(),
       pickup_window_end: windowEnd.toISOString(),
       delivery_address: destLoc?.address || '',
@@ -633,8 +674,37 @@ export const createTask = async (req: AuthenticatedRequest, res: Response) => {
 
     // Real-time: Notify volunteer via Socket.io
     io.to(`volunteer_${volunteer_id}`).emit('task_assigned', task);
+    
+    // Real-time: Notify donor via Socket.io
+    if (listing?.donor_id) {
+      io.to(`donor_${listing.donor_id}`).emit('volunteer_assigned', {
+        task_id: task.id,
+        listing_title: listing.title,
+        volunteer: task.volunteer,
+        pickup_otp: claim.pickup_otp
+      });
+    }
+
     // Notify NGO room
     io.to(`ngo_${ngo?.id}`).emit('task_created', task);
+
+    // Persistent Notifications (Parallel)
+    Promise.all([
+        // To Volunteer
+        createNotification({
+            userId: volunteer_id,
+            type: 'task_assigned',
+            message: `New pickup assigned: ${listing?.title || 'Food Items'}.`,
+            metadata: { task_id: task.id, role: 'volunteer', task }
+        }),
+        // To Donor
+        listing?.donor_id ? createNotification({
+            userId: listing.donor_id,
+            type: 'verification_needed',
+            message: `A volunteer has been assigned to pick up "${listing.title}". Please have the OTP ready.`,
+            metadata: { listing_id: listing.id, role: 'donor', volunteer_name: task.volunteer?.full_name }
+        }) : Promise.resolve()
+    ]).catch(err => console.error('Delayed notification error:', err));
 
     res.status(201).json({ success: true, data: task });
   } catch (error: any) {
@@ -788,7 +858,7 @@ export const getActiveTasks = async (req: AuthenticatedRequest, res: Response) =
 export const getAnalytics = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { data: ngo } = await supabase
-      .from('ngo_organizations').select('id').eq('user_id', req.user.id).single();
+      .from('ngo_organizations').select('id, points').eq('user_id', req.user.id).single();
 
     const { period = 'month' } = req.query;
 
@@ -827,6 +897,7 @@ export const getAnalytics = async (req: AuthenticatedRequest, res: Response) => 
         tasks_in_progress: inProgressTasks,
         available_volunteers: availableVolunteers,
         total_volunteers: (volunteersData.data || []).length,
+        points: (ngo as any)?.points || 0,
         co2_saved_kg: Math.round(totalKg * 2.5 * 10) / 10,
         food_value_saved_inr: Math.round(totalKg * 50),
         impact_by_category: impactData.data || [],
@@ -863,7 +934,7 @@ export const aiSuggestAssignments = async (req: AuthenticatedRequest, res: Respo
       .from('ngo_organizations').select('id').eq('user_id', req.user.id).single();
 
     const [claimsRes, volunteersRes] = await Promise.all([
-      supabase.from('ngo_food_claims').select(`*, food_listings(title, pickup_lat, pickup_lng, quantity, food_type)`)
+      supabase.from('ngo_food_claims').select(`*, food_listings(title, lat, lng, quantity, category)`)
         .eq('ngo_id', ngo?.id).eq('status', 'pending_assignment'),
       supabase.from('ngo_volunteers').select('*').eq('ngo_id', ngo?.id).eq('status', 'active').eq('availability_status', 'available'),
     ]);
@@ -885,8 +956,8 @@ export const aiSuggestAssignments = async (req: AuthenticatedRequest, res: Respo
       const ranked = volunteers
         .map((v: any) => ({
           volunteer: v,
-          distance: v.current_lat && listing?.pickup_lat
-            ? haversine(v.current_lat, v.current_lng, listing.pickup_lat, listing.pickup_lng)
+          distance: v.current_lat && listing?.lat
+            ? haversine(v.current_lat, v.current_lng, listing.lat, listing.lng)
             : 99,
         }))
         .sort((a: any, b: any) => a.distance - b.distance);

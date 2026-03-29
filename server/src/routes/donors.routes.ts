@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getMe, updateMe, kycUpload } from '../controllers/donors.controller';
+import { getMe, updateMe, kycUpload, getDonorClaims } from '../controllers/donors.controller';
 import { requireAuth } from '../middleware/auth';
 
 const router = Router();
@@ -7,6 +7,7 @@ const router = Router();
 router.use(requireAuth);
 
 router.get('/me', getMe as any);
+router.get('/claims', getDonorClaims as any);
 router.put('/me', updateMe as any);
 router.post('/kyc-upload', kycUpload as any);
 

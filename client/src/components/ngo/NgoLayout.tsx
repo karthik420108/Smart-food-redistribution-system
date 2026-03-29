@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, Search, ClipboardList, MapPin, Users, BarChart3,
   Building2, Settings, Bell, ChevronLeft, ChevronRight, LogOut,
-  Menu, FileText, Activity, HelpCircle, Zap
+  Menu, FileText, Activity, HelpCircle, Zap, Home
 } from 'lucide-react';
 
 import { supabase } from '../../lib/supabase';
@@ -38,7 +38,7 @@ export function NgoLayout() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    navigate('/login');
+    navigate('/ngo/login');
   };
 
   const SidebarContent = () => (
@@ -101,6 +101,13 @@ export function NgoLayout() {
 
       {/* Bottom */}
       <div className="p-3 border-t border-white/10 space-y-1">
+        <Link
+          to="/"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-500 hover:text-gray-300 hover:bg-white/5 transition-all w-full ${collapsed ? 'justify-center' : ''}`}
+        >
+          <Home size={18} />
+          {!collapsed && <span className="text-sm">Role Selection</span>}
+        </Link>
         <button
           onClick={handleLogout}
           className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-gray-400 hover:text-red-400 hover:bg-red-500/10 transition-all w-full ${collapsed ? 'justify-center' : ''}`}

@@ -1,8 +1,7 @@
-import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowRight, Sparkles, Shield, MapPin } from 'lucide-react';
-import { useAuthStore } from '../../store/authStore';
+import { ArrowRight, Sparkles, Shield, MapPin, Trophy, Zap, Award, Star } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const PORTALS = [
   {
@@ -65,31 +64,119 @@ const PORTALS = [
   },
 ];
 
-const STATS = [
+// Fallback stats while loading or if API fails
+const INITIAL_STATS = [
   { value: '2.4M+', label: 'Meals Redistributed' },
   { value: '340+', label: 'NGO Partners' },
   { value: '12K+', label: 'Volunteers' },
   { value: '890 t', label: 'CO₂ Offset' },
 ];
 
-export function PortalSelector() {
-  const { user, loading } = useAuthStore();
-  const navigate = useNavigate();
+interface LeaderboardEntity {
+  name: string;
+  points: number;
+}
 
-  useEffect(() => {
-    // initialize is now handled by the App component once at the top level
-  }, []);
+interface LeaderboardData {
+  donors: LeaderboardEntity[];
+  ngos: LeaderboardEntity[];
+  volunteers: LeaderboardEntity[];
+}
 
-  // Already authenticated donors → go straight to their dashboard
-  useEffect(() => {
-    if (!loading && user) {
-      const role = (user as any).user_metadata?.role;
-      if (!role || role === 'donor') {
-        navigate('/', { replace: true });
-      }
-      // ngo/volunteer users stay here (they go to /ngo directly after ngo login)
+function LeaderboardSection({ data }: { data: LeaderboardData | null }) {
+  if (!data) return null;
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-20 px-4">
+      <LeaderboardColumn 
+        title="Top Donors" 
+        data={data.donors} 
+        icon={<Star className="text-orange-400" size={18} />} 
+        accentColor="orange"
+      />
+      <LeaderboardColumn 
+        title="Impact NGOs" 
+        data={data.ngos} 
+        icon={<Trophy className="text-teal-400" size={18} />} 
+        accentColor="teal"
+      />
+      <LeaderboardColumn 
+        title="Super Volunteers" 
+        data={data.volunteers} 
+        icon={<Zap className="text-purple-400" size={18} />} 
+        accentColor="purple"
+      />
+    </div>
+  );
+}
+
+function LeaderboardColumn({ title, data, icon, accentColor }: { title: string, data: LeaderboardEntity[], icon: React.ReactNode, accentColor: string }) {
+  const getColors = () => {
+    switch(accentColor) {
+      case 'orange': return { border: 'border-orange-500/20', bg: 'bg-orange-500/5', text: 'text-orange-400' };
+      case 'purple': return { border: 'border-purple-500/20', bg: 'bg-purple-500/5', text: 'text-purple-400' };
+      default: return { border: 'border-teal-500/20', bg: 'bg-teal-500/5', text: 'text-teal-400' };
     }
-  }, [user, loading]);
+  };
+  const colors = getColors();
+
+  return (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      className={`rounded-2xl border ${colors.border} ${colors.bg} p-5 backdrop-blur-sm h-full`}
+    >
+      <div className="flex items-center gap-2 mb-4">
+        {icon}
+        <h3 className="font-bold text-gray-200">{title}</h3>
+      </div>
+      <div className="space-y-3">
+        {data.length > 0 ? data.map((item, idx) => (
+          <div key={idx} className="flex items-center justify-between group">
+            <div className="flex items-center gap-3">
+               <span className={`text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-white/10 ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40' : 'text-gray-500'}`}>
+                 {idx + 1}
+               </span>
+               <span className="text-sm text-gray-400 group-hover:text-white transition-colors">{item.name}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+               <span className={`text-xs font-mono font-bold ${colors.text}`}>{item.points.toLocaleString()}</span>
+               <Award size={12} className={colors.text} />
+            </div>
+          </div>
+        )) : (
+          <p className="text-xs text-gray-600 italic py-2">Rankings coming soon...</p>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+export function PortalSelector() {
+  const navigate = useNavigate();
+  const [stats, setStats] = useState(INITIAL_STATS);
+  const [leaderboard, setLeaderboard] = useState<LeaderboardData | null>(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [statsRes, lbRes] = await Promise.all([
+          fetch('http://localhost:5000/api/public/stats'),
+          fetch('http://localhost:5000/api/public/leaderboard')
+        ]);
+        
+        const statsJson = await statsRes.json();
+        const lbJson = await lbRes.json();
+
+        if (statsJson.success) setStats(statsJson.data);
+        if (lbJson.success) setLeaderboard(lbJson.data);
+      } catch (error) {
+        console.error('Failed to fetch public data:', error);
+      }
+    };
+    fetchData();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-950 text-white overflow-x-hidden">
@@ -113,18 +200,22 @@ export function PortalSelector() {
           </div>
           <div>
             <div className="font-bold text-white leading-none">FoodBridge</div>
-            <div className="text-xs text-teal-400 leading-none mt-0.5">Surplus Food Redistribution</div>
+            <div className="text-xs text-teal-400 leading-none mt-0.5">Surplus Food Redistribution Network</div>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <a href="mailto:support@foodbridge.in" className="text-xs text-gray-500 hover:text-gray-300 transition-colors hidden sm:block">
-            Need help?
-          </a>
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20 text-[10px] text-green-400 uppercase tracking-tighter font-bold">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+            System Live
+          </div>
         </div>
       </header>
 
       {/* ── Hero ── */}
-      <section className="relative z-10 text-center px-6 pt-10 pb-16 max-w-4xl mx-auto">
+      <section className="relative z-10 text-center px-6 pt-10 pb-12 max-w-4xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
@@ -132,18 +223,18 @@ export function PortalSelector() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-teal-500/10 border border-teal-500/20 text-teal-400 text-xs font-medium mb-6"
         >
           <Sparkles size={12} />
-          India's largest food redistribution network
+          Real-time Surplus Food Redistribution
         </motion.div>
 
         <motion.h1
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-4xl md:text-5xl lg:text-6xl font-black leading-tight mb-5"
+          className="text-4xl md:text-5xl lg:text-7xl font-black leading-tight mb-5 tracking-tight"
         >
-          Every meal
-          <span className="block bg-gradient-to-r from-teal-400 via-emerald-400 to-green-400 bg-clip-text text-transparent">
-            deserves a second life.
+          Connecting Surplus
+          <span className="block bg-gradient-to-r from-teal-400 via-emerald-400 to-green-400 bg-clip-text text-transparent italic">
+            to Community.
           </span>
         </motion.h1>
 
@@ -151,9 +242,9 @@ export function PortalSelector() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="text-gray-400 text-lg max-w-xl mx-auto mb-10"
+          className="text-gray-400 text-lg max-w-xl mx-auto mb-10 leading-relaxed"
         >
-          Connect surplus food from restaurants and events directly to communities that need it — in real time.
+          A high-performance logistics platform linking donors, NGOs, and volunteers to eliminate food waste in India.
         </motion.p>
 
         {/* Stats */}
@@ -161,15 +252,27 @@ export function PortalSelector() {
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          className="flex items-center justify-center gap-8 mb-16 flex-wrap"
+          className="flex items-center justify-center gap-8 mb-4 flex-wrap"
         >
-          {STATS.map((stat) => (
-            <div key={stat.label} className="text-center">
-              <div className="text-2xl font-black text-white">{stat.value}</div>
-              <div className="text-xs text-gray-500 mt-0.5">{stat.label}</div>
+          {stats.map((stat) => (
+            <div key={stat.label} className="text-center group">
+              <div className="text-3xl font-black text-white group-hover:text-teal-400 transition-colors">{stat.value}</div>
+              <div className="text-xs text-gray-500 mt-0.5 font-medium uppercase tracking-wider">{stat.label}</div>
             </div>
           ))}
         </motion.div>
+      </section>
+
+      {/* ── Hall of Fame ── */}
+      <section className="relative z-10 py-10">
+        <div className="text-center mb-10">
+           <h2 className="text-2xl font-black mb-2 flex items-center justify-center gap-2">
+             <Trophy size={24} className="text-yellow-500" />
+             Community Hall of Fame
+           </h2>
+           <p className="text-sm text-gray-500">Celebrating our top contributors in real-time</p>
+        </div>
+        <LeaderboardSection data={leaderboard} />
       </section>
 
       {/* ── Portal Cards ── */}

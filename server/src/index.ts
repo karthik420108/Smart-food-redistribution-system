@@ -16,10 +16,17 @@ const httpServer = http.createServer(app);
 // Socket.io setup
 export const io = new SocketServer(httpServer, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
     credentials: true,
   },
 });
+
+/**
+ * Returns the socket.io instance for use in other modules.
+ */
+export function getIO() {
+  return io;
+}
 
 // Socket.io room handling
 io.on('connection', (socket) => {
@@ -29,6 +36,12 @@ io.on('connection', (socket) => {
   socket.on('join_ngo', (ngo_id: string) => {
     socket.join(`ngo_${ngo_id}`);
     console.log(`Socket ${socket.id} joined room ngo_${ngo_id}`);
+  });
+
+  // Join donor-specific room
+  socket.on('join_donor', (donor_id: string) => {
+    socket.join(`donor_${donor_id}`);
+    console.log(`Socket ${socket.id} joined room donor_${donor_id}`);
   });
 
   // Join volunteer-specific room
@@ -51,7 +64,7 @@ io.on('connection', (socket) => {
 // Middleware
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174'],
+  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
   credentials: true
 }));
 app.use(express.json());
@@ -77,6 +90,7 @@ import claimRoutes from './routes/claims.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import ngoRoutes from './routes/ngo.routes';
 import volunteerRoutes from './routes/volunteer.routes';
+import publicRoutes from './routes/public.routes'; // Added
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -86,12 +100,13 @@ app.use('/api/claims', claimRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/ngo', ngoRoutes);
 app.use('/api/volunteer', volunteerRoutes);
+app.use('/api/public', publicRoutes); // Added
 
 // Error Handling
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
-httpServer.listen(PORT, () => {
+httpServer.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
 });

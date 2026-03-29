@@ -74,3 +74,42 @@ export const kycUpload = async (req: AuthenticatedRequest, res: Response) => {
     res.status(500).json({ success: false, error: err.message });
   }
 };
+
+export const getDonorClaims = async (req: AuthenticatedRequest, res: Response) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+       res.status(401).json({ success: false, error: 'Unauthorized' });
+       return;
+    }
+
+    // Get donor record
+    const { data: donor } = await supabase.from('donors').select('id').eq('user_id', userId).single();
+    if (!donor) {
+       res.status(404).json({ success: false, error: 'Donor profile not found' });
+       return;
+    }
+
+    // Get all claims for listings belonging to this donor
+    const { data, error } = await supabase
+      .from('ngo_food_claims')
+      .select(`
+        *,
+        food_listings!inner(id, title, donor_id),
+        ngo:ngo_organizations(id, org_name, phone),
+        tasks:volunteer_tasks(
+          id, 
+          status, 
+          volunteer:ngo_volunteers(id, full_name, phone)
+        )
+      `)
+      .eq('food_listings.donor_id', donor.id)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    res.status(200).json({ success: true, data });
+  } catch (err: any) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};

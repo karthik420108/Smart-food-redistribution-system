@@ -7,6 +7,7 @@ import { validateRequest } from '../middleware/validate';
 const router = Router();
 
 router.get('/', getListings as any);
+router.get('/available', getListings as any);
 router.get('/:id', getListingById as any);
 
 router.use(requireAuth);

@@ -32,6 +32,7 @@ const DiscoverFood  = lazy(() => import('./pages/ngo/DiscoverFood').then(m => ({
 // Volunteer Portal
 import { VolunteerLayout } from './components/volunteer/VolunteerLayout';
 import { VolunteerHome } from './pages/volunteer/Home';
+import { VolunteerLogin } from './pages/volunteer/Login';
 import { VerifyOtpPage, CompleteTaskPage } from './pages/volunteer/TaskActions';
 const VolunteerTasks   = lazy(() => import('./pages/volunteer/Tasks').then(m => ({ default: m.VolunteerTasks })));
 const VolunteerProfile = lazy(() => import('./pages/volunteer/VolunteerProfile').then(m => ({ default: m.VolunteerProfile })));
@@ -46,8 +47,8 @@ function LoadingFallback() {
 
 /**
  * Gate for the Donor dashboard.
- * - If authenticated → render dashboard
- * - If not → send to /login (donor login) — keeps donor flow 100% intact
+ * - If authenticated as donor → render dashboard
+ * - If not → send to /login (donor login)
  */
 function DonorProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();
@@ -65,11 +66,11 @@ function DonorProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 /**
- * Root path dispatcher.
- * - Authenticated → Donor dashboard
- * - Unauthenticated → Portal selector (role picker)
+ * Gate for the NGO dashboard.
+ * - If authenticated as ngo_admin → render dashboard
+ * - If not → send to /ngo/login
  */
-function RootDispatcher() {
+function NgoProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuthStore();
 
   if (loading) {
@@ -80,11 +81,30 @@ function RootDispatcher() {
     );
   }
 
-  // Authenticated donor → straight to their dashboard
-  if (user) return <Navigate to="/donor" replace />;
+  if (!user) return <Navigate to="/ngo/login" replace />;
+  if (user.user_metadata?.role !== 'ngo_admin') return <Navigate to="/ngo/login" replace />;
+  return <>{children}</>;
+}
 
-  // Not logged in → show beautiful role selector
-  return <PortalSelector />;
+/**
+ * Gate for the Volunteer dashboard.
+ * - If authenticated as ngo_volunteer → render dashboard
+ * - If not → send to /volunteer/login
+ */
+function VolunteerProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuthStore();
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-gray-400 text-sm">
+        Loading…
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/volunteer/login" replace />;
+  if (user.user_metadata?.role !== 'ngo_volunteer') return <Navigate to="/volunteer/login" replace />;
+  return <>{children}</>;
 }
 
 function App() {
@@ -107,20 +127,20 @@ function App() {
       />
       <Routes>
         {/* ───────────────────────────────────────────
-            Landing / Role selector
+            Landing / Role selector — ALWAYS shown at /
+            regardless of auth state. Users pick their
+            role and go to the specific login.
         ─────────────────────────────────────────── */}
-        <Route path="/" element={<RootDispatcher />} />
+        <Route path="/" element={<PortalSelector />} />
 
         {/* ───────────────────────────────────────────
-            Donor Auth  (completely untouched)
+            Donor Auth
         ─────────────────────────────────────────── */}
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
 
         {/* ───────────────────────────────────────────
-            Donor Dashboard  (moved to /donor/*)
-            All internal NavLinks already use relative paths
-            so Layout + sub-pages work identically.
+            Donor Dashboard  (/donor/*)
         ─────────────────────────────────────────── */}
         <Route
           path="/donor"
@@ -140,16 +160,22 @@ function App() {
         </Route>
 
         {/* ───────────────────────────────────────────
-            NGO Auth  (public, unchanged)
+            NGO Auth (public)
         ─────────────────────────────────────────── */}
         <Route path="/ngo/login"    element={<NgoLogin />} />
         <Route path="/ngo/register" element={<NgoRegister />} />
-        <Route path="/volunteer/login" element={<NgoLogin />} />
 
         {/* ───────────────────────────────────────────
-            NGO Dashboard  (unchanged)
+            NGO Dashboard (/ngo/*)
         ─────────────────────────────────────────── */}
-        <Route path="/ngo" element={<NgoLayout />}>
+        <Route
+          path="/ngo"
+          element={
+            <NgoProtectedRoute>
+              <NgoLayout />
+            </NgoProtectedRoute>
+          }
+        >
           <Route index element={<NgoDashboard />} />
           <Route path="tasks"      element={<TaskAssignmentBoard />} />
           <Route path="volunteers" element={<Volunteers />} />
@@ -165,9 +191,21 @@ function App() {
         </Route>
 
         {/* ───────────────────────────────────────────
-            Volunteer Portal  (unchanged)
+            Volunteer Auth (public — dedicated page)
         ─────────────────────────────────────────── */}
-        <Route path="/volunteer" element={<VolunteerLayout />}>
+        <Route path="/volunteer/login" element={<VolunteerLogin />} />
+
+        {/* ───────────────────────────────────────────
+            Volunteer Dashboard (/volunteer/*)
+        ─────────────────────────────────────────── */}
+        <Route
+          path="/volunteer"
+          element={
+            <VolunteerProtectedRoute>
+              <VolunteerLayout />
+            </VolunteerProtectedRoute>
+          }
+        >
           <Route index       element={<VolunteerHome />} />
           <Route path="tasks"   element={<Suspense fallback={<LoadingFallback />}><VolunteerTasks /></Suspense>} />
           <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VolunteerProfile /></Suspense>} />
