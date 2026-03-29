@@ -6,12 +6,22 @@ Demo Vedio Link - https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC
 
 ---
 
-  <h2>Innovation Points</h2>
-- Expiry-Urgency Adaptive Discovery Feed \n
-- Global impact map of a donor,ngo
-- Realtime tracking of volunteer availability for food collection
-- Customised smart priority based food dispatch scheduling sequences
-- Competetive leaderboard profile generation for NGO and DONORS
+## 🚀 Innovation Points
+
+### 1. 🕒 Expiry-Urgency Adaptive Discovery Feed
+A smart feed that prioritizes food listings based on expiry time, ensuring faster redistribution of highly perishable items.
+
+### 2. 🌍 Global Impact Map
+Visual representation of contributions made by donors and NGOs, showcasing their reach and real-world impact geographically.
+
+### 3. 📍 Real-Time Volunteer Availability Tracking
+Live tracking of volunteer status and location to enable efficient assignment for food collection tasks.
+
+### 4. 🧠 Customized Smart Priority-Based Dispatch Scheduling
+An intelligent system that dynamically schedules food pickups and deliveries based on urgency, distance, and availability.
+
+### 5. 🏆 Competitive Leaderboard System
+Gamified profiles and rankings for NGOs and donors to encourage participation and recognize impactful contributions.
 ---
 
 Short Description :- 
