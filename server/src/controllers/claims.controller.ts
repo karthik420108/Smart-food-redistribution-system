@@ -11,7 +11,7 @@ export const createClaim = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const { listing_id, quantity_claimed } = req.body;
-    const pickup_code = Math.floor(100000 + Math.random() * 900000).toString(); // 6 digit OTP
+    const pickup_code = Math.floor(1000 + Math.random() * 9000).toString(); // 4 digit OTP
 
     const { data, error } = await supabase.from('claims').insert({
       listing_id,

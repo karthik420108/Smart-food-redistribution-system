@@ -17,7 +17,7 @@ const router = Router();
 // ---- Unprotected ----
 router.post('/auth/setup-pin', [
   body('phone').notEmpty(),
-  body('setup_pin').isLength({ min: 6, max: 6 }),
+  body('setup_pin').isLength({ min: 4, max: 4 }),
   body('new_password').isLength({ min: 8 }),
   validateRequest,
 ], volunteerSetupPin as any);
@@ -33,11 +33,11 @@ router.put('/me', updateVolunteerProfile as any);
 router.put('/availability', [body('availability_status').notEmpty(), validateRequest], updateAvailability as any);
 
 // Tasks
+router.post('/tasks/:id/verify-otp', verifyOtp as any);
 router.get('/tasks/active', getActiveTask as any);
 router.get('/tasks', getVolunteerTasks as any);
 router.get('/tasks/:id', getTaskDetail as any);
 router.put('/tasks/:id/status', [body('status').notEmpty(), validateRequest], updateTaskStatus as any);
-router.post('/tasks/:id/verify-otp', [body('otp').isLength({ min: 6, max: 6 }), validateRequest], verifyOtp as any);
 router.post('/tasks/:id/complete', [body('actual_kg_collected').isNumeric(), validateRequest], completeTask as any);
 
 // GPS Location

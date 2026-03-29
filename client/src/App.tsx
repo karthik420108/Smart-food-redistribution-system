@@ -63,6 +63,11 @@ function DonorProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!user) return <Navigate to="/login" replace />;
+  const role = user.user_metadata?.role;
+  if (role === 'ngo_admin' || role === 'ngo_volunteer') {
+    // If they are logged in as something else, they shouldn't be in the donor portal
+    return <Navigate to={role === 'ngo_admin' ? '/ngo' : '/volunteer'} replace />;
+  }
   return <>{children}</>;
 }
 
@@ -210,12 +215,10 @@ function App() {
           >
             <Route index       element={<VolunteerHome />} />
             <Route path="tasks"   element={<Suspense fallback={<LoadingFallback />}><VolunteerTasks /></Suspense>} />
+            <Route path="tasks/:id/otp"      element={<VerifyOtpPage />} />
+            <Route path="tasks/:id/complete" element={<CompleteTaskPage />} />
             <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VolunteerProfile /></Suspense>} />
           </Route>
-
-          {/* Volunteer full-screen task flow pages */}
-          <Route path="/volunteer/tasks/:id/otp"      element={<VerifyOtpPage />} />
-          <Route path="/volunteer/tasks/:id/complete" element={<CompleteTaskPage />} />
 
           {/* ───────────────────────────────────────────
               Catch-all → role selector

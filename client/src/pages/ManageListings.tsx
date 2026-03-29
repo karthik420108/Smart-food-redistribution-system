@@ -26,7 +26,7 @@ export function ManageListings() {
         .from('donors')
         .select('id')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (!donor) {
         setListings([]);
@@ -70,7 +70,7 @@ export function ManageListings() {
       fetchListings();
       
       // Real-time: Join donor room
-      supabase.from('donors').select('id').eq('user_id', user.id).single().then(({ data: donor }) => {
+      supabase.from('donors').select('id').eq('user_id', user.id).maybeSingle().then(({ data: donor }) => {
         if (donor) {
           socket.connect();
           socket.emit('join_donor', donor.id);

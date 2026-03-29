@@ -310,7 +310,7 @@ export const createClaim = async (req: AuthenticatedRequest, res: Response) => {
     const { listing_id, quantity_claimed, quantity_unit, destination_location_id, notes } = req.body;
 
     // Generate 6-digit OTP
-    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const otp = Math.floor(1000 + Math.random() * 9000).toString(); // 4 digit OTP
 
     const { data, error } = await supabase.from('ngo_food_claims').insert({
       ngo_id: ngo.id,
@@ -460,7 +460,7 @@ export const addVolunteer = async (req: AuthenticatedRequest, res: Response) => 
 
     if (create_login && email) {
       // Generate a 6-digit setup PIN
-      setupPin = Math.floor(100000 + Math.random() * 900000).toString();
+      setupPin = Math.floor(1000 + Math.random() * 9000).toString(); // 4 digit setup pin
       const tempPassword = crypto.randomBytes(16).toString('hex');
 
       const { data: authUser, error: authError } = await supabase.auth.admin.createUser({

@@ -22,7 +22,7 @@ export function ListingDetail() {
         .from('food_listings')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
       
       if (listingError) throw listingError;
       setListing(listingData);
@@ -340,7 +340,7 @@ export function ListingDetail() {
                     
                     <div className="py-8 bg-gray-50 dark:bg-gray-900 border-2 border-dashed border-primary/30 rounded-3xl">
                         <div className="text-5xl font-black tracking-[0.3em] text-primary">
-                           {claims.find(c => c.id === verifyingClaimId)?.pickup_otp || '------'}
+                           {claims.find(c => c.id === verifyingClaimId)?.pickup_otp || '----'}
                         </div>
                     </div>
 

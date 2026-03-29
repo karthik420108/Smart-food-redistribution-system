@@ -45,7 +45,7 @@ export const useListingStore = create<ListingState>((set) => ({
     const userId = user?.id;
     
     if (userId) {
-       const { data: donor } = await supabase.from('donors').select('id').eq('user_id', userId).single();
+       const { data: donor } = await supabase.from('donors').select('id').eq('user_id', userId).maybeSingle();
        if (donor) {
            const { data } = await supabase
               .from('food_listings')

@@ -38,7 +38,7 @@ export const createListing = async (req: AuthenticatedRequest, res: Response) =>
     }
 
     // Get donor id and location
-    const { data: donor } = await supabase.from('donors').select('id, lat, lng, full_name').eq('user_id', userId).single();
+    const { data: donor } = await supabase.from('donors').select('id, lat, lng, full_name').eq('user_id', userId).maybeSingle();
     if (!donor) {
        res.status(404).json({ success: false, error: 'Donor profile not found' });
        return;
@@ -102,7 +102,10 @@ export const createListing = async (req: AuthenticatedRequest, res: Response) =>
             }
         }));
 
-        await supabase.from('notifications').insert(notifications);
+        // Fire and forget notifications to keep response time low
+        supabase.from('notifications').insert(notifications).then(({ error: err }) => {
+            if (err) console.error('Background notification error:', err.message);
+        });
     }
 
     res.status(201).json({ success: true, data: listing });

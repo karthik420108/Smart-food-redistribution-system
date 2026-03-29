@@ -80,9 +80,8 @@ export function CreateListing() {
   const onPublish = async (data: FormValues) => {
     setIsPublishing(true);
     try {
-      // 1. Upload images
-      const imageUrls: string[] = [];
-      for (const file of images) {
+      // 1. Upload images in parallel
+      const uploadPromises = images.map(async (file) => {
         const fileExt = file.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const { data: uploadData, error: uploadError } = await supabase.storage
@@ -95,8 +94,10 @@ export function CreateListing() {
           .from('listings')
           .getPublicUrl(uploadData.path);
         
-        imageUrls.push(publicUrl);
-      }
+        return publicUrl;
+      });
+
+      const imageUrls = await Promise.all(uploadPromises);
 
       // 2. Submit to backend
       const payload = {
@@ -201,13 +202,15 @@ export function CreateListing() {
 
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Category</label>
-                       <select {...register('category')} className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none">
-                         <option value="cooked_food">Cooked Meals</option>
-                         <option value="raw_produce">Raw Groceries</option>
-                         <option value="packaged">Packaged Goods</option>
-                         <option value="beverages">Beverages</option>
-                       </select>
-                    </div>
+                        <select {...register('category')} className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none">
+                          <option value="cooked_food">Cooked Meals</option>
+                          <option value="raw_produce">Raw Groceries</option>
+                          <option value="packaged">Packaged Goods</option>
+                          <option value="beverages">Beverages</option>
+                          <option value="other">Other</option>
+                        </select>
+                        {errors.category && <p className="text-red-500 text-xs font-bold px-2">{errors.category.message}</p>}
+                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-8">
@@ -219,16 +222,19 @@ export function CreateListing() {
                         className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none" 
                         placeholder="0.00" 
                       />
+                      {errors.quantity && <p className="text-red-500 text-xs font-bold px-2">{errors.quantity.message}</p>}
                     </div>
                     <div className="space-y-2">
                        <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Unit</label>
-                       <select {...register('quantity_unit')} className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none">
-                         <option value="kg">kilograms</option>
-                         <option value="portions">meals / portions</option>
-                         <option value="boxes">boxes</option>
-                         <option value="packets">packets</option>
-                       </select>
-                    </div>
+                        <select {...register('quantity_unit')} className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none">
+                          <option value="kg">kilograms</option>
+                          <option value="liters">liters</option>
+                          <option value="portions">meals / portions</option>
+                          <option value="boxes">boxes</option>
+                          <option value="packets">packets</option>
+                        </select>
+                        {errors.quantity_unit && <p className="text-red-500 text-xs font-bold px-2">{errors.quantity_unit.message}</p>}
+                     </div>
                     <div className="space-y-2 md:col-span-1 col-span-2">
                        <label className="text-sm font-bold text-gray-500 uppercase tracking-wider">Valid Until</label>
                        <input 
@@ -236,6 +242,7 @@ export function CreateListing() {
                         {...register('expiry_datetime')} 
                         className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none" 
                       />
+                      {errors.expiry_datetime && <p className="text-red-500 text-xs font-bold px-2">{errors.expiry_datetime.message}</p>}
                     </div>
                   </div>
 
@@ -247,6 +254,7 @@ export function CreateListing() {
                       className="w-full px-5 py-4 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:ring-4 focus:ring-primary/10 focus:border-primary outline-none resize-none" 
                       placeholder="Any specific instructions..." 
                     />
+                    {errors.description && <p className="text-red-500 text-xs font-bold px-2">{errors.description.message}</p>}
                   </div>
 
                   <label className={`flex items-center gap-4 p-6 rounded-[1.5rem] cursor-pointer border-2 transition-all ${watch('is_urgent') ? 'bg-red-50 border-red-100' : 'bg-gray-50/50 border-transparent hover:border-gray-100'}`}>

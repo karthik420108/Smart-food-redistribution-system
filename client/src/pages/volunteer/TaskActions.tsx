@@ -12,7 +12,7 @@ export function VerifyOtpPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { verifyOtp } = useVolunteerStore();
-  const [code, setCode] = useState(['', '', '', '', '', '']);
+  const [code, setCode] = useState(['', '', '', '']);
   const [verifying, setVerifying] = useState(false);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -21,7 +21,7 @@ export function VerifyOtpPage() {
     const next = [...code];
     next[index] = value.slice(-1);
     setCode(next);
-    if (value && index < 5) inputs.current[index + 1]?.focus();
+    if (value && index < 3) inputs.current[index + 1]?.focus();
   };
 
   const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
@@ -32,16 +32,17 @@ export function VerifyOtpPage() {
 
   const handleVerify = async () => {
     const otp = code.join('');
-    if (otp.length < 6) { toast.error('Enter the complete 6-digit OTP'); return; }
+    if (otp.length < 4) { toast.error('Enter the complete 4-digit OTP'); return; }
     setVerifying(true);
     try {
+      console.log('Attempting OTP verification:', { taskId: id, otp });
       const result = await verifyOtp(id!, otp);
       if (result.success) {
         toast.success('OTP Verified! Food confirmed at donor.');
         navigate(-1);
       } else {
         toast.error(result.error || 'Incorrect OTP. Try again.');
-        setCode(['', '', '', '', '', '']);
+        setCode(['', '', '', '']);
         inputs.current[0]?.focus();
       }
     } catch (err: any) {
@@ -64,7 +65,7 @@ export function VerifyOtpPage() {
               <span className="text-2xl">🔐</span>
             </div>
             <h1 className="text-xl font-bold text-white">Enter Pickup OTP</h1>
-            <p className="text-sm text-gray-400 mt-1">Ask the donor for their 6-digit OTP to confirm pickup</p>
+            <p className="text-sm text-gray-400 mt-1">Ask the donor for their 4-digit OTP to confirm pickup</p>
           </div>
 
           {/* OTP Input */}

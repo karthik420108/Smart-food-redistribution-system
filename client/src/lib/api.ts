@@ -48,7 +48,9 @@ const api = {
   },
   post: async (url: string, data: any, config?: any) => {
     const token = await getAccessToken();
-    const response = await fetch(`${API_URL}${url}`, {
+    const fullUrl = `${API_URL}${url}`;
+    console.log(`[API Post] ${fullUrl}`, data);
+    const response = await fetch(fullUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

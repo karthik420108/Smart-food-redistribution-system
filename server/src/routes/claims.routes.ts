@@ -15,7 +15,7 @@ router.post('/', [
 ], createClaim as any);
 
 router.post('/:id/verify-pickup', [
-  body('pickup_code').isLength({ min: 6, max: 6 }),
+  body('pickup_code').isLength({ min: 4, max: 4 }),
   validateRequest
 ], verifyPickup as any);
 

@@ -86,7 +86,7 @@ export function Profile() {
         })
         .eq('user_id', user?.id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
       setDonorProfile(updated);
@@ -376,7 +376,7 @@ export function Profile() {
                                 <div className="space-y-2">
                                     <h4 className="font-black uppercase text-sm text-amber-800 dark:text-amber-400">Strict Verification Active</h4>
                                     <p className="text-xs font-medium text-amber-700 dark:text-amber-500 leading-relaxed">
-                                        All food handovers must be verified via the 6-digit secure signal. NGOs without a valid verification code cannot be authorized for pickup. This protocol ensures asset traceability.
+                                        All food handovers must be verified via the 4-digit secure signal. NGOs without a valid verification code cannot be authorized for pickup. This protocol ensures asset traceability.
                                     </p>
                                 </div>
                             </div>

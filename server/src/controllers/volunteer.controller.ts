@@ -258,9 +258,11 @@ export const updateTaskStatus = async (req: AuthenticatedRequest, res: Response)
 };
 
 export const verifyOtp = async (req: AuthenticatedRequest, res: Response) => {
+  console.log('--- verifyOtp called ---', req.body);
   try {
     const { id } = req.params;
     const { otp } = req.body;
+    console.log('Received OTP verify request:', { id, otp, body: req.body });
 
     // Get the claim OTP via task
     const { data: task } = await supabase
@@ -285,7 +287,9 @@ export const verifyOtp = async (req: AuthenticatedRequest, res: Response) => {
       return;
     }
 
-    if ((claim as any).pickup_otp !== otp) {
+    console.log('OTP Comparison:', { stored: (claim as any).pickup_otp, received: otp });
+    
+    if (String((claim as any).pickup_otp).trim() !== String(otp).trim()) {
       res.status(400).json({ success: false, error: 'Incorrect OTP' });
       return;
     }

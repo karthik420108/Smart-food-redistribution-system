@@ -327,7 +327,7 @@ export function Volunteers() {
                         </div>
                         {formData.create_login && (
                           <div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/20 text-xs text-teal-400">
-                            A 6-digit Setup PIN will be generated. Share it with {formData.full_name || 'the volunteer'} so they can create their password on the Volunteer Portal.
+                            A 4-digit Setup PIN will be generated. Share it with {formData.full_name || 'the volunteer'} so they can create their password on the Volunteer Portal.
                           </div>
                         )}
                         <div>

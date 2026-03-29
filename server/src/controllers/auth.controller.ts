@@ -45,7 +45,7 @@ export const register = async (req: Request, res: Response) => {
       kyc_document_url,
       selfie_url,
       status: 'pending'
-    }).select().single();
+    }).select().maybeSingle();
 
     if (dbError) {
       res.status(500).json({ success: false, error: 'Database insertion failed: ' + dbError.message });
@@ -103,7 +103,7 @@ export const login = async (req: Request, res: Response) => {
       .from('donors')
       .select('*')
       .eq('user_id', authData.user?.id)
-      .single();
+      .maybeSingle();
 
     res.status(200).json({
       success: true,
