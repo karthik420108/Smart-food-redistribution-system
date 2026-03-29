@@ -1,12 +1,12 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { 
-  HeartHandshake, 
-  LayoutDashboard, 
-  ListOrdered, 
-  PlusCircle, 
-  LineChart, 
-  Bell, 
+import {
+  HeartHandshake,
+  LayoutDashboard,
+  ListOrdered,
+  PlusCircle,
+  LineChart,
+  Bell,
   UserCircle,
   LogOut
 } from 'lucide-react';
@@ -18,12 +18,12 @@ export function Layout() {
   const location = useLocation();
 
   const navItems = [
-    { name: 'Dashboard', path: '/', icon: LayoutDashboard },
-    { name: 'My Listings', path: '/manage-listings', icon: ListOrdered },
-    { name: 'Create Listing', path: '/create-listing', icon: PlusCircle },
-    { name: 'Analytics', path: '/analytics', icon: LineChart },
-    { name: 'Notifications', path: '/notifications', icon: Bell, badge: 3 },
-    { name: 'Profile & Settings', path: '/profile', icon: UserCircle },
+    { name: 'Dashboard',         path: '/donor',                   icon: LayoutDashboard },
+    { name: 'My Listings',       path: '/donor/manage-listings',   icon: ListOrdered },
+    { name: 'Create Listing',    path: '/donor/create-listing',    icon: PlusCircle },
+    { name: 'Analytics',         path: '/donor/analytics',         icon: LineChart },
+    { name: 'Notifications',     path: '/donor/notifications',     icon: Bell, badge: 3 },
+    { name: 'Profile & Settings',path: '/donor/profile',           icon: UserCircle },
   ];
 
   const handleLogout = () => {
@@ -35,7 +35,7 @@ export function Layout() {
       {/* Sidebar */}
       <aside className="w-64 border-r bg-white dark:bg-gray-950 flex flex-col hidden md:flex h-full flex-shrink-0">
         <div className="h-16 flex items-center px-6 border-b">
-          <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
+          <Link to="/donor" className="flex items-center gap-2 font-bold text-xl text-primary">
             <HeartHandshake className="w-6 h-6 text-primary" />
             <span>FoodBridge</span>
           </Link>
@@ -43,18 +43,22 @@ export function Layout() {
 
         <nav className="flex-1 overflow-y-auto px-4 py-4 space-y-1">
           {navItems.map((item) => {
-            const isActive = location.pathname === item.path;
+            // Exact match for dashboard, prefix match for sub-pages
+            const isActive = item.path === '/donor'
+              ? location.pathname === '/donor' || location.pathname === '/donor/'
+              : location.pathname.startsWith(item.path);
             const Icon = item.icon;
-            
+
             return (
               <Link
                 key={item.path}
                 to={item.path}
+
                 className={twMerge(
                   clsx(
                     "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
-                    isActive 
-                      ? "bg-primary/10 text-primary" 
+                    isActive
+                      ? "bg-primary/10 text-primary"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-gray-50"
                   )
                 )}
@@ -81,7 +85,7 @@ export function Layout() {
               <span className="text-xs text-primary font-medium">Verified Donor</span>
             </div>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-md transition-colors"
           >

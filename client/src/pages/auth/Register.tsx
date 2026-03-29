@@ -89,7 +89,7 @@ export function Register() {
 
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || 'Failed to register');
-        
+
         // Sync auth state locally
         if (json.data?.session) {
           const { error: sessionError } = await supabase.auth.setSession({
@@ -98,14 +98,15 @@ export function Register() {
           });
           if (sessionError) throw sessionError;
         }
-        
+
         if (json.data?.user && json.data?.profile) {
           await loginSuccess(json.data.user, json.data.profile, json.data.session);
         }
-        
+
         navigate('/');
       } catch (err: any) {
-        alert(err.message);
+        console.error('Registration Error:', err);
+        alert(err.message || 'An unexpected error occurred during registration.');
       }
     }
   };
@@ -133,30 +134,29 @@ export function Register() {
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         {/* Stepper */}
         <div className="flex justify-center items-center mb-8 px-4 relative">
-           <div className="absolute top-1/2 left-8 w-[calc(100%-4rem)] h-1 bg-gray-200 -translate-y-1/2 rounded-full -z-10 overflow-hidden" />
-           <div className="flex w-full justify-between z-10">
-             {stepsInfo.map((s, index) => {
-               const isActive = step === index + 1;
-               const isCompleted = step > index + 1;
-               return (
-                 <div key={index} className="flex flex-col items-center bg-gray-50 dark:bg-gray-950 px-2">
-                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${
-                     isActive ? 'border-primary bg-primary text-white' : 
-                     isCompleted ? 'border-primary bg-primary/10 text-primary' : 
-                     'border-gray-300 bg-white text-gray-400'
-                   }`}>
-                     {isCompleted ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-5 h-5" />}
-                   </div>
-                   <span className="text-xs font-medium mt-1 text-gray-500">{s.title}</span>
-                 </div>
-               )
-             })}
-           </div>
+          <div className="absolute top-1/2 left-8 w-[calc(100%-4rem)] h-1 bg-gray-200 -translate-y-1/2 rounded-full -z-10 overflow-hidden" />
+          <div className="flex w-full justify-between z-10">
+            {stepsInfo.map((s, index) => {
+              const isActive = step === index + 1;
+              const isCompleted = step > index + 1;
+              return (
+                <div key={index} className="flex flex-col items-center bg-gray-50 dark:bg-gray-950 px-2">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${isActive ? 'border-primary bg-primary text-white' :
+                      isCompleted ? 'border-primary bg-primary/10 text-primary' :
+                        'border-gray-300 bg-white text-gray-400'
+                    }`}>
+                    {isCompleted ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-5 h-5" />}
+                  </div>
+                  <span className="text-xs font-medium mt-1 text-gray-500">{s.title}</span>
+                </div>
+              )
+            })}
+          </div>
         </div>
 
         <div className="bg-white dark:bg-gray-900 py-8 px-4 shadow sm:rounded-xl sm:px-10 border">
           <form className="space-y-6" onSubmit={handleSubmit(onSubmit)}>
-            
+
             {step === 1 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                 <div>
@@ -182,14 +182,14 @@ export function Register() {
                 <div>
                   <label className="block text-sm font-medium mb-2">I am registering as an:</label>
                   <div className="flex gap-4">
-                     <label className="flex items-center gap-2">
-                       <input type="radio" value="individual" {...register('donorType')} className="text-primary focus:ring-primary" defaultChecked />
-                       <span>Individual</span>
-                     </label>
-                     <label className="flex items-center gap-2">
-                       <input type="radio" value="business" {...register('donorType')} className="text-primary focus:ring-primary" />
-                       <span>Business/NGO</span>
-                     </label>
+                    <label className="flex items-center gap-2">
+                      <input type="radio" value="individual" {...register('donorType')} className="text-primary focus:ring-primary" defaultChecked />
+                      <span>Individual</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input type="radio" value="business" {...register('donorType')} className="text-primary focus:ring-primary" />
+                      <span>Business/NGO</span>
+                    </label>
                   </div>
                 </div>
               </div>
@@ -198,24 +198,23 @@ export function Register() {
             {step === 2 && (
               <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                 <h3 className="font-semibold mb-2">KYC & Identity Verification</h3>
-                
+
                 <div className="space-y-4">
                   <div className="relative">
-                    <input 
-                      type="file" 
-                      id="kyc-upload" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      id="kyc-upload"
+                      className="hidden"
                       onChange={(e) => handleFileUpload(e, 'kycUrl')}
                       accept="image/*"
                     />
-                    <label 
+                    <label
                       htmlFor="kyc-upload"
-                      className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        kycUrl ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary'
-                      }`}
+                      className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${kycUrl ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary'
+                        }`}
                     >
                       {isUploading.kycUrl ? (
-                         <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+                        <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
                       ) : kycUrl ? (
                         <CheckCircle className="w-8 h-8 mx-auto text-green-500 mb-2" />
                       ) : (
@@ -227,21 +226,20 @@ export function Register() {
                   </div>
 
                   <div className="relative">
-                    <input 
-                      type="file" 
-                      id="selfie-upload" 
-                      className="hidden" 
+                    <input
+                      type="file"
+                      id="selfie-upload"
+                      className="hidden"
                       onChange={(e) => handleFileUpload(e, 'selfieUrl')}
                       accept="image/*"
                     />
-                    <label 
+                    <label
                       htmlFor="selfie-upload"
-                      className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${
-                        selfieUrl ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary'
-                      }`}
+                      className={`block border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-colors ${selfieUrl ? 'border-green-500 bg-green-50' : 'border-gray-300 hover:border-primary'
+                        }`}
                     >
                       {isUploading.selfieUrl ? (
-                         <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
+                        <div className="w-8 h-8 mx-auto border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
                       ) : selfieUrl ? (
                         <CheckCircle className="w-8 h-8 mx-auto text-green-500 mb-2" />
                       ) : (
@@ -265,19 +263,19 @@ export function Register() {
                 <h3 className="font-semibold mb-2">Primary Pickup Address</h3>
                 <div>
                   <label className="block text-sm font-medium">Pincode</label>
-                  <input 
+                  <input
                     {...register('pincode')}
-                    className="mt-1 block w-full px-4 py-2 border rounded-md focus:ring-primary focus:border-primary bg-transparent" 
-                    placeholder="e.g. 560001" 
+                    className="mt-1 block w-full px-4 py-2 border rounded-md focus:ring-primary focus:border-primary bg-transparent"
+                    placeholder="e.g. 560001"
                   />
                   {errors.pincode && <p className="mt-1 text-xs text-red-500">{errors.pincode.message}</p>}
                 </div>
                 <div>
                   <label className="block text-sm font-medium">Full Address</label>
-                  <textarea 
+                  <textarea
                     {...register('address')}
-                    rows={3} 
-                    className="mt-1 block w-full px-4 py-2 border rounded-md focus:ring-primary focus:border-primary bg-transparent" 
+                    rows={3}
+                    className="mt-1 block w-full px-4 py-2 border rounded-md focus:ring-primary focus:border-primary bg-transparent"
                     placeholder="Street name, Landmark, Building..."
                   />
                   {errors.address && <p className="mt-1 text-xs text-red-500">{errors.address.message}</p>}

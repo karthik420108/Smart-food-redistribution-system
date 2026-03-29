@@ -32,9 +32,9 @@ export function Login() {
         body: JSON.stringify(data)
       });
       const json = await res.json();
-      
+
       if (!res.ok) throw new Error(json.error || 'Failed to login');
-      
+
       // Sync auth state locally
       if (json.data?.session) {
         const { error: sessionError } = await supabase.auth.setSession({
@@ -43,12 +43,12 @@ export function Login() {
         });
         if (sessionError) throw sessionError;
       }
-      
+
       if (json.data?.user && json.data?.profile) {
         await loginSuccess(json.data.user, json.data.profile, json.data.session);
       }
-      
-      navigate('/');
+
+      navigate('/donor');
     } catch (err: any) {
       alert(err.message);
     } finally {
@@ -60,9 +60,10 @@ export function Login() {
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="flex justify-center flex-col items-center">
+          <Link to="/" className="text-xs text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 mb-4 flex items-center gap-1">← Back to portal selection</Link>
           <HeartHandshake className="w-12 h-12 text-primary" />
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 dark:text-gray-100">
-            Donor/Supplier Login
+            Donor / Supplier Login
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600 dark:text-gray-400">
             Or <Link to="/register" className="font-medium text-primary hover:text-primary/80">register a new account</Link>

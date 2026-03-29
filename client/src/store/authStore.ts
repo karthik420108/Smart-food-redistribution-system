@@ -26,6 +26,7 @@ interface AuthState {
   user: User | null;
   donorProfile: DonorProfile | null;
   loading: boolean;
+  isInitialized: boolean;
   setUser: (user: User | null) => void;
   setDonorProfile: (profile: DonorProfile | null) => void;
   initialize: () => Promise<void>;
@@ -33,17 +34,21 @@ interface AuthState {
   signOut: () => Promise<void>;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   donorProfile: null,
   loading: true,
+  isInitialized: false,
   setUser: (user) => set({ user }),
   setDonorProfile: (profile) => set({ donorProfile: profile }),
   loginSuccess: async (user, profile, _session) => {
     set({ user, donorProfile: profile, loading: false });
   },
   initialize: async () => {
-    set({ loading: true });
+    // Only initialize once
+    if (get().isInitialized) return;
+    
+    set({ loading: true, isInitialized: true });
     
     // Check active session
     const { data: { session } } = await supabase.auth.getSession();
@@ -51,15 +56,18 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (session?.user) {
       set({ user: session.user });
       
-      // Fetch donor profile
-      const { data } = await supabase
-        .from('donors')
-        .select('*')
-        .eq('user_id', session.user.id)
-        .single();
-        
-      if (data) {
-        set({ donorProfile: data as DonorProfile });
+      // Only fetch donor profile if user is a donor
+      const role = session.user.user_metadata?.role;
+      if (role !== 'ngo_admin' && role !== 'ngo_volunteer') {
+        const { data, error } = await supabase
+          .from('donors')
+          .select('*')
+          .eq('user_id', session.user.id)
+          .limit(1);
+          
+        if (data && data.length > 0 && !error) {
+          set({ donorProfile: data[0] as DonorProfile });
+        }
       }
     }
     
@@ -69,12 +77,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     supabase.auth.onAuthStateChange(async (_event, session) => {
       set({ user: session?.user || null });
       if (session?.user) {
-        const { data } = await supabase
-          .from('donors')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .single();
-        set({ donorProfile: data as DonorProfile });
+        // Skip donor fetch for NGO/Volunteer roles
+        const role = session.user.user_metadata?.role;
+        if (role !== 'ngo_admin' && role !== 'ngo_volunteer') {
+          const { data, error } = await supabase
+            .from('donors')
+            .select('*')
+            .eq('user_id', session.user.id)
+            .limit(1);
+            
+          if (data && data.length > 0 && !error) {
+            set({ donorProfile: data[0] as DonorProfile });
+          } else {
+            set({ donorProfile: null });
+          }
+        }
       } else {
         set({ donorProfile: null });
       }

@@ -11,47 +11,176 @@ import { Profile } from './pages/Profile';
 import { Login } from './pages/auth/Login';
 import { Register } from './pages/auth/Register';
 import { useAuthStore } from './store/authStore';
+import { useEffect, lazy, Suspense } from 'react';
 
-import { useEffect } from 'react';
+// Landing
+import { PortalSelector } from './pages/landing/PortalSelector';
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading, initialize } = useAuthStore();
-  
-  useEffect(() => {
-    initialize();
-  }, [initialize]);
+// NGO Portal
+import { NgoLayout } from './components/ngo/NgoLayout';
+import { NgoLogin } from './pages/ngo/Login';
+import { NgoRegister } from './pages/ngo/Register';
+import { NgoDashboard } from './pages/ngo/Dashboard';
+import { TaskAssignmentBoard } from './pages/ngo/TaskAssignmentBoard';
+import { Volunteers } from './pages/ngo/Volunteers';
+import { Claims } from './pages/ngo/Claims';
+const ImpactPage    = lazy(() => import('./pages/ngo/Impact').then(m => ({ default: m.ImpactPage })));
+const NgoProfilePage = lazy(() => import('./pages/ngo/NgoProfile').then(m => ({ default: m.NgoProfilePage })));
+const LiveTracking  = lazy(() => import('./pages/ngo/LiveTracking').then(m => ({ default: m.LiveTracking })));
+const DiscoverFood  = lazy(() => import('./pages/ngo/DiscoverFood').then(m => ({ default: m.DiscoverFood })));
+
+// Volunteer Portal
+import { VolunteerLayout } from './components/volunteer/VolunteerLayout';
+import { VolunteerHome } from './pages/volunteer/Home';
+import { VerifyOtpPage, CompleteTaskPage } from './pages/volunteer/TaskActions';
+const VolunteerTasks   = lazy(() => import('./pages/volunteer/Tasks').then(m => ({ default: m.VolunteerTasks })));
+const VolunteerProfile = lazy(() => import('./pages/volunteer/VolunteerProfile').then(m => ({ default: m.VolunteerProfile })));
+
+function LoadingFallback() {
+  return (
+    <div className="flex items-center justify-center h-64 text-gray-500 text-sm">
+      Loading…
+    </div>
+  );
+}
+
+/**
+ * Gate for the Donor dashboard.
+ * - If authenticated → render dashboard
+ * - If not → send to /login (donor login) — keeps donor flow 100% intact
+ */
+function DonorProtectedRoute({ children }: { children: React.ReactNode }) {
+  const { user, loading } = useAuthStore();
 
   if (loading) {
-     return <div className="h-screen w-full flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-gray-400 text-sm">
+        Loading…
+      </div>
+    );
   }
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
-  }
+  if (!user) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
+/**
+ * Root path dispatcher.
+ * - Authenticated → Donor dashboard
+ * - Unauthenticated → Portal selector (role picker)
+ */
+function RootDispatcher() {
+  const { user, loading } = useAuthStore();
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-gray-950 text-gray-400 text-sm">
+        Loading…
+      </div>
+    );
+  }
+
+  // Authenticated donor → straight to their dashboard
+  if (user) return <Navigate to="/donor" replace />;
+
+  // Not logged in → show beautiful role selector
+  return <PortalSelector />;
+}
+
 function App() {
+  const { initialize } = useAuthStore();
+  useEffect(() => { initialize(); }, [initialize]);
+
   return (
     <BrowserRouter>
-      <Toaster position="top-right" />
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            background: '#1f2937',
+            color: '#fff',
+            border: '1px solid rgba(255,255,255,0.1)',
+            borderRadius: '12px',
+            fontSize: '13px',
+          },
+        }}
+      />
       <Routes>
-        <Route path="/login" element={<Login />} />
+        {/* ───────────────────────────────────────────
+            Landing / Role selector
+        ─────────────────────────────────────────── */}
+        <Route path="/" element={<RootDispatcher />} />
+
+        {/* ───────────────────────────────────────────
+            Donor Auth  (completely untouched)
+        ─────────────────────────────────────────── */}
+        <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
-        
-        <Route path="/" element={
-          <ProtectedRoute>
-            <Layout />
-          </ProtectedRoute>
-        }>
-          <Route index element={<DashboardOverview />} />
+
+        {/* ───────────────────────────────────────────
+            Donor Dashboard  (moved to /donor/*)
+            All internal NavLinks already use relative paths
+            so Layout + sub-pages work identically.
+        ─────────────────────────────────────────── */}
+        <Route
+          path="/donor"
+          element={
+            <DonorProtectedRoute>
+              <Layout />
+            </DonorProtectedRoute>
+          }
+        >
+          <Route index                element={<DashboardOverview />} />
           <Route path="manage-listings" element={<ManageListings />} />
-          <Route path="create-listing" element={<CreateListing />} />
-          <Route path="listings/:id" element={<ListingDetail />} />
-          <Route path="analytics" element={<Analytics />} />
-          <Route path="notifications" element={<Notifications />} />
-          <Route path="profile" element={<Profile />} />
+          <Route path="create-listing"  element={<CreateListing />} />
+          <Route path="listings/:id"    element={<ListingDetail />} />
+          <Route path="analytics"       element={<Analytics />} />
+          <Route path="notifications"   element={<Notifications />} />
+          <Route path="profile"         element={<Profile />} />
         </Route>
+
+        {/* ───────────────────────────────────────────
+            NGO Auth  (public, unchanged)
+        ─────────────────────────────────────────── */}
+        <Route path="/ngo/login"    element={<NgoLogin />} />
+        <Route path="/ngo/register" element={<NgoRegister />} />
+        <Route path="/volunteer/login" element={<NgoLogin />} />
+
+        {/* ───────────────────────────────────────────
+            NGO Dashboard  (unchanged)
+        ─────────────────────────────────────────── */}
+        <Route path="/ngo" element={<NgoLayout />}>
+          <Route index element={<NgoDashboard />} />
+          <Route path="tasks"      element={<TaskAssignmentBoard />} />
+          <Route path="volunteers" element={<Volunteers />} />
+          <Route path="claims"     element={<Claims />} />
+          <Route path="tracking"   element={<Suspense fallback={<LoadingFallback />}><LiveTracking /></Suspense>} />
+          <Route path="discover"   element={<Suspense fallback={<LoadingFallback />}><DiscoverFood /></Suspense>} />
+          <Route path="impact"     element={<Suspense fallback={<LoadingFallback />}><ImpactPage /></Suspense>} />
+          <Route path="profile"    element={<Suspense fallback={<LoadingFallback />}><NgoProfilePage /></Suspense>} />
+          <Route path="reports"       element={<div className="p-6 text-gray-400">Reports coming soon</div>} />
+          <Route path="notifications" element={<div className="p-6 text-gray-400">Notifications coming soon</div>} />
+          <Route path="settings"      element={<div className="p-6 text-gray-400">Settings coming soon</div>} />
+          <Route path="activity"      element={<div className="p-6 text-gray-400">Activity log coming soon</div>} />
+        </Route>
+
+        {/* ───────────────────────────────────────────
+            Volunteer Portal  (unchanged)
+        ─────────────────────────────────────────── */}
+        <Route path="/volunteer" element={<VolunteerLayout />}>
+          <Route index       element={<VolunteerHome />} />
+          <Route path="tasks"   element={<Suspense fallback={<LoadingFallback />}><VolunteerTasks /></Suspense>} />
+          <Route path="profile" element={<Suspense fallback={<LoadingFallback />}><VolunteerProfile /></Suspense>} />
+        </Route>
+
+        {/* Volunteer full-screen task flow pages */}
+        <Route path="/volunteer/tasks/:id/otp"      element={<VerifyOtpPage />} />
+        <Route path="/volunteer/tasks/:id/complete" element={<CompleteTaskPage />} />
+
+        {/* ───────────────────────────────────────────
+            Catch-all → role selector
+        ─────────────────────────────────────────── */}
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );

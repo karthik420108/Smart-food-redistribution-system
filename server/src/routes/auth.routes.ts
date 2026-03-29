@@ -7,7 +7,7 @@ const router = Router();
 
 router.post('/register', [
   body('email').isEmail().withMessage('Valid email required'),
-  body('password').isLength({ min: 10 }).withMessage('Password must be at least 10 characters'),
+  body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   body('full_name').notEmpty().withMessage('Full name is required'),
   body('donor_type').isIn(['individual', 'business']).withMessage('Invalid donor type'),
   validateRequest
