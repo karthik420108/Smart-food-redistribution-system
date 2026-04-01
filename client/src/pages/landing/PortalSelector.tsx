@@ -88,22 +88,22 @@ function LeaderboardSection({ data }: { data: LeaderboardData | null }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto mb-20 px-4">
-      <LeaderboardColumn 
-        title="Top Donors" 
-        data={data.donors} 
-        icon={<Star className="text-orange-400" size={18} />} 
+      <LeaderboardColumn
+        title="Top Donors"
+        data={data.donors}
+        icon={<Star className="text-orange-400" size={18} />}
         accentColor="orange"
       />
-      <LeaderboardColumn 
-        title="Impact NGOs" 
-        data={data.ngos} 
-        icon={<Trophy className="text-teal-400" size={18} />} 
+      <LeaderboardColumn
+        title="Impact NGOs"
+        data={data.ngos}
+        icon={<Trophy className="text-teal-400" size={18} />}
         accentColor="teal"
       />
-      <LeaderboardColumn 
-        title="Super Volunteers" 
-        data={data.volunteers} 
-        icon={<Zap className="text-purple-400" size={18} />} 
+      <LeaderboardColumn
+        title="Super Volunteers"
+        data={data.volunteers}
+        icon={<Zap className="text-purple-400" size={18} />}
         accentColor="purple"
       />
     </div>
@@ -112,7 +112,7 @@ function LeaderboardSection({ data }: { data: LeaderboardData | null }) {
 
 function LeaderboardColumn({ title, data, icon, accentColor }: { title: string, data: LeaderboardEntity[], icon: React.ReactNode, accentColor: string }) {
   const getColors = () => {
-    switch(accentColor) {
+    switch (accentColor) {
       case 'orange': return { border: 'border-orange-500/20', bg: 'bg-orange-500/5', text: 'text-orange-400' };
       case 'purple': return { border: 'border-purple-500/20', bg: 'bg-purple-500/5', text: 'text-purple-400' };
       default: return { border: 'border-teal-500/20', bg: 'bg-teal-500/5', text: 'text-teal-400' };
@@ -121,7 +121,7 @@ function LeaderboardColumn({ title, data, icon, accentColor }: { title: string, 
   const colors = getColors();
 
   return (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
@@ -135,14 +135,14 @@ function LeaderboardColumn({ title, data, icon, accentColor }: { title: string, 
         {data.length > 0 ? data.map((item, idx) => (
           <div key={idx} className="flex items-center justify-between group">
             <div className="flex items-center gap-3">
-               <span className={`text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-white/10 ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40' : 'text-gray-500'}`}>
-                 {idx + 1}
-               </span>
-               <span className="text-sm text-gray-400 group-hover:text-white transition-colors">{item.name}</span>
+              <span className={`text-[10px] font-bold w-5 h-5 rounded-full flex items-center justify-center border border-white/10 ${idx === 0 ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/40' : 'text-gray-500'}`}>
+                {idx + 1}
+              </span>
+              <span className="text-sm text-gray-400 group-hover:text-white transition-colors">{item.name}</span>
             </div>
             <div className="flex items-center gap-1.5">
-               <span className={`text-xs font-mono font-bold ${colors.text}`}>{item.points.toLocaleString()}</span>
-               <Award size={12} className={colors.text} />
+              <span className={`text-xs font-mono font-bold ${colors.text}`}>{item.points.toLocaleString()}</span>
+              <Award size={12} className={colors.text} />
             </div>
           </div>
         )) : (
@@ -162,10 +162,10 @@ export function PortalSelector() {
     const fetchData = async () => {
       try {
         const [statsRes, lbRes] = await Promise.all([
-          fetch('http://localhost:5000/api/public/stats'),
-          fetch('http://localhost:5000/api/public/leaderboard')
+          fetch('https://smart-food-redistribution-system.onrender.com/api/public/stats'),
+          fetch('https://smart-food-redistribution-system.onrender.com/api/public/leaderboard')
         ]);
-        
+
         const statsJson = await statsRes.json();
         const lbJson = await lbRes.json();
 
@@ -269,11 +269,11 @@ export function PortalSelector() {
       {/* ── Hall of Fame ── */}
       <section className="relative z-10 py-10">
         <div className="text-center mb-10">
-           <h2 className="text-2xl font-black mb-2 flex items-center justify-center gap-2">
-             <Trophy size={24} className="text-yellow-500" />
-             Community Hall of Fame
-           </h2>
-           <p className="text-sm text-gray-500">Celebrating our top contributors in real-time</p>
+          <h2 className="text-2xl font-black mb-2 flex items-center justify-center gap-2">
+            <Trophy size={24} className="text-yellow-500" />
+            Community Hall of Fame
+          </h2>
+          <p className="text-sm text-gray-500">Celebrating our top contributors in real-time</p>
         </div>
         <LeaderboardSection data={leaderboard} />
       </section>
@@ -302,11 +302,10 @@ export function PortalSelector() {
               )}
 
               {/* Gradient top bar */}
-              <div className={`h-1 w-full bg-gradient-to-r ${
-                portal.role === 'donor' ? 'from-orange-500 to-amber-400' :
+              <div className={`h-1 w-full bg-gradient-to-r ${portal.role === 'donor' ? 'from-orange-500 to-amber-400' :
                 portal.role === 'ngo' ? 'from-teal-500 to-emerald-400' :
-                'from-purple-500 to-violet-400'
-              } opacity-60 group-hover:opacity-100 transition-opacity`} />
+                  'from-purple-500 to-violet-400'
+                } opacity-60 group-hover:opacity-100 transition-opacity`} />
 
               {/* Gradient bg overlay */}
               <div className={`absolute inset-0 bg-gradient-to-br ${portal.gradient} opacity-60 group-hover:opacity-100 transition-opacity pointer-events-none`} />
@@ -336,7 +335,7 @@ export function PortalSelector() {
                     <li key={f} className="flex items-center gap-2 text-xs text-gray-300">
                       <div className={`w-4 h-4 rounded-full ${portal.accentBg} flex items-center justify-center flex-shrink-0`}>
                         <svg viewBox="0 0 12 12" fill="none" className={`w-2.5 h-2.5 ${portal.accentText}`}>
-                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                         </svg>
                       </div>
                       {f}

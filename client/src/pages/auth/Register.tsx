@@ -71,7 +71,7 @@ export function Register() {
       setStep(step + 1);
     } else {
       try {
-        const res = await fetch('http://localhost:5000/api/auth/register', {
+        const res = await fetch('https://smart-food-redistribution-system.onrender.com/api/auth/register', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -142,8 +142,8 @@ export function Register() {
               return (
                 <div key={index} className="flex flex-col items-center bg-gray-50 dark:bg-gray-950 px-2">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors ${isActive ? 'border-primary bg-primary text-white' :
-                      isCompleted ? 'border-primary bg-primary/10 text-primary' :
-                        'border-gray-300 bg-white text-gray-400'
+                    isCompleted ? 'border-primary bg-primary/10 text-primary' :
+                      'border-gray-300 bg-white text-gray-400'
                     }`}>
                     {isCompleted ? <CheckCircle className="w-5 h-5" /> : <s.icon className="w-5 h-5" />}
                   </div>
