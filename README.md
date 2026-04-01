@@ -10,10 +10,10 @@
 👉 https://drive.google.com/drive/folders/1e_89ZNu32EtfCPG9wHIJsC_QxHVl3lS9
 
 ### 🌐 Deployment (Admin Panel)
-👉[ https://smart-food-distribution-admin-panel-sfo7-lwro2cg25.vercel.app](https://smart-food-distribution-admin-panel-1-qvs0.onrender.com)
+👉 https://smart-food-distribution-admin-panel-1-qvs0.onrender.com
 
 ### 🌐 Deployment (Donor / NGO / Volunteer Panel)
-👉[https://smart-food-redistribution-system-1.onrender.com)
+👉 https://smart-food-redistribution-system-1.onrender.com
 ---
 
 ## 🚀 Innovation Points
