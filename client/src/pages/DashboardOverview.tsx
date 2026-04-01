@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Shield, Plus, Zap, Activity, Package, 
+import {
+  Shield, Plus, Zap, Activity, Package,
   Trophy, Target, User, ChevronRight, Globe, Lock, Cpu
 } from 'lucide-react';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useTheme } from '../contexts/ThemeContext';
 
@@ -50,7 +50,7 @@ export function DashboardOverview() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [verifyingPin, setVerifyingPin] = useState(false);
   const [hoveredIndex, setHoveredIndex] = useState<string | null>(null); // Track hover state
-  
+
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
 
@@ -61,25 +61,25 @@ export function DashboardOverview() {
 
   useEffect(() => {
     if (!mapRef.current || mapInstance.current) return;
-    mapInstance.current = L.map(mapRef.current, { 
-      center: [19.076, 72.877], zoom: 12, zoomControl: false, attributionControl: false 
+    mapInstance.current = L.map(mapRef.current, {
+      center: [19.076, 72.877], zoom: 12, zoomControl: false, attributionControl: false
     });
-    L.tileLayer(isDark 
+    L.tileLayer(isDark
       ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
       : 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
     ).addTo(mapInstance.current);
-    
+
     return () => { if (mapInstance.current) { mapInstance.current.remove(); mapInstance.current = null; } };
   }, [isDark]);
 
   const containerVars = { visible: { transition: { staggerChildren: 0.05 } } };
   const itemVars = {
     hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease: "easeOut" } }
   };
 
   return (
-    <div 
+    <div
       onMouseMove={handleMouseMove}
       style={{
         position: 'relative', minHeight: '100vh',
@@ -148,7 +148,7 @@ export function DashboardOverview() {
         zIndex: 0
       }} />
 
-      <motion.div 
+      <motion.div
         variants={containerVars} initial="hidden" animate="visible"
         style={{ position: 'relative', zIndex: 1, padding: '40px', maxWidth: '1500px', margin: '0 auto' }}
       >
@@ -165,15 +165,15 @@ export function DashboardOverview() {
             </h1>
           </div>
           <div style={{ display: 'flex', gap: '16px' }}>
-             <motion.button 
-               whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
-               style={{ 
-                 backgroundColor: '#10b981', color: 'white', padding: '14px 24px', borderRadius: '14px', 
-                 border: 'none', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center' 
-               }}
-             >
-               <Plus size={18} strokeWidth={3} /> NEW LOGISTICS
-             </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              style={{
+                backgroundColor: '#10b981', color: 'white', padding: '14px 24px', borderRadius: '14px',
+                border: 'none', fontWeight: 800, fontSize: '13px', cursor: 'pointer', display: 'flex', gap: '8px', alignItems: 'center'
+              }}
+            >
+              <Plus size={18} strokeWidth={3} /> NEW LOGISTICS
+            </motion.button>
           </div>
         </motion.div>
 
@@ -185,9 +185,9 @@ export function DashboardOverview() {
             { label: 'Active Nodes', val: '42', icon: Activity, id: 'stat-3' },
             { label: 'Global Rank', val: '#12', icon: Trophy, id: 'stat-4' }
           ].map((stat) => (
-            <motion.div 
-              key={stat.id} 
-              variants={itemVars} 
+            <motion.div
+              key={stat.id}
+              variants={itemVars}
               className="card-perspective"
               onMouseEnter={() => setHoveredIndex(stat.id)}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -195,11 +195,11 @@ export function DashboardOverview() {
               <div className="professional-card">
                 {hoveredIndex === stat.id && <RevolvingBorder />}
                 <div className="card-inner">
-                   <div className="icon-box"><stat.icon size={20} /></div>
-                   <div>
-                     <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{stat.label}</div>
-                     <div style={{ fontSize: '24px', fontWeight: 900 }}>{stat.val}</div>
-                   </div>
+                  <div className="icon-box"><stat.icon size={20} /></div>
+                  <div>
+                    <div style={{ fontSize: '10px', fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '4px' }}>{stat.label}</div>
+                    <div style={{ fontSize: '24px', fontWeight: 900 }}>{stat.val}</div>
+                  </div>
                 </div>
               </div>
             </motion.div>
@@ -224,8 +224,8 @@ export function DashboardOverview() {
           </motion.div>
 
           <motion.div variants={itemVars} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div 
-              className="card-perspective" 
+            <div
+              className="card-perspective"
               style={{ flex: 1.2 }}
               onMouseEnter={() => setHoveredIndex('agent')}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -237,10 +237,10 @@ export function DashboardOverview() {
                     <h3 style={{ fontSize: '18px', fontWeight: 900, marginBottom: '4px' }}>Active Pickups</h3>
                     <p style={{ fontSize: '11px', color: '#64748b', fontWeight: 700 }}>VERIFICATION PENDING</p>
                   </div>
-                  <div style={{ 
-                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc', 
+                  <div style={{
+                    backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : '#f8fafc',
                     padding: '20px', borderRadius: '18px', border: `1px solid ${isDark ? 'rgba(255,255,255,0.05)' : '#e2e8f0'}`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'space-between' 
+                    display: 'flex', alignItems: 'center', justifyContent: 'space-between'
                   }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                       <div style={{ background: '#10b981', padding: '10px', borderRadius: '10px', color: 'white' }}><User size={18} /></div>
@@ -249,7 +249,7 @@ export function DashboardOverview() {
                         <div style={{ fontSize: '10px', color: '#10b981', fontWeight: 800 }}>READY</div>
                       </div>
                     </div>
-                    <motion.button 
+                    <motion.button
                       onClick={() => setVerifyingPin(true)}
                       whileHover={{ x: 3, backgroundColor: '#10b981' }}
                       style={{ background: isDark ? '#334155' : '#e2e8f0', border: 'none', color: isDark ? 'white' : '#1e293b', width: '36px', height: '36px', borderRadius: '10px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
@@ -261,8 +261,8 @@ export function DashboardOverview() {
               </div>
             </div>
 
-            <div 
-              className="card-perspective" 
+            <div
+              className="card-perspective"
               style={{ flex: 1 }}
               onMouseEnter={() => setHoveredIndex('chart')}
               onMouseLeave={() => setHoveredIndex(null)}
@@ -291,24 +291,24 @@ export function DashboardOverview() {
       {/* AUTH MODAL */}
       <AnimatePresence>
         {verifyingPin && (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: 'fixed', inset: 0, zIndex: 5000, backgroundColor: 'rgba(2, 6, 23, 0.85)', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
-            <motion.div 
+            <motion.div
               initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
               style={{ backgroundColor: isDark ? '#0f172a' : 'white', padding: '40px', borderRadius: '32px', textAlign: 'center', maxWidth: '380px', width: '90%', border: isDark ? '1px solid #1e293b' : 'none' }}
             >
-               <div style={{ width: '60px', height: '60px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#10b981' }}>
-                  <Lock size={28} />
-               </div>
-               <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '24px' }}>Access Key</h2>
-               <div style={{ 
-                 backgroundColor: isDark ? '#020617' : '#f8fafc', padding: '24px', borderRadius: '20px', 
-                 fontSize: '48px', fontWeight: 900, color: '#10b981', border: `1px solid ${isDark ? '#1e293b' : '#e2e8f0'}`, 
-                 marginBottom: '32px', letterSpacing: '0.2em' 
-               }}>8291</div>
-               <button onClick={() => setVerifyingPin(false)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '16px', borderRadius: '14px', border: 'none', fontWeight: 800, cursor: 'pointer' }}>AUTHENTICATE</button>
+              <div style={{ width: '60px', height: '60px', background: 'rgba(16, 185, 129, 0.1)', borderRadius: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', color: '#10b981' }}>
+                <Lock size={28} />
+              </div>
+              <h2 style={{ fontSize: '24px', fontWeight: 900, marginBottom: '24px' }}>Access Key</h2>
+              <div style={{
+                backgroundColor: isDark ? '#020617' : '#f8fafc', padding: '24px', borderRadius: '20px',
+                fontSize: '48px', fontWeight: 900, color: '#10b981', border: `1px solid ${isDark ? '#1e293b' : '#e2e8f0'}`,
+                marginBottom: '32px', letterSpacing: '0.2em'
+              }}>8291</div>
+              <button onClick={() => setVerifyingPin(false)} style={{ width: '100%', backgroundColor: '#10b981', color: 'white', padding: '16px', borderRadius: '14px', border: 'none', fontWeight: 800, cursor: 'pointer' }}>AUTHENTICATE</button>
             </motion.div>
           </motion.div>
         )}

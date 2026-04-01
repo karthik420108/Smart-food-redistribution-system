@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
-import L from 'leaflet';
+import * as L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -39,21 +39,21 @@ const STATUS_ORDER: Record<string, number> = {
 };
 
 const STATUS_BADGE_CLS: Record<string, string> = {
-  available:  'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
-  on_task:    'bg-amber-500/20 text-amber-400 border-amber-500/30',
-  break:      'bg-blue-500/20 text-blue-400 border-blue-500/30',
-  offline:    'bg-gray-700/60 text-gray-500 border-gray-600/30',
+  available: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+  on_task: 'bg-amber-500/20 text-amber-400 border-amber-500/30',
+  break: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+  offline: 'bg-gray-700/60 text-gray-500 border-gray-600/30',
 };
 
 const TASK_STATUS_LABEL: Record<string, string> = {
-  assigned:           'Task assigned',
-  accepted:           'Accepted task',
-  en_route_pickup:    'En route to pickup',
-  arrived_at_pickup:  'At donor location',
-  otp_verified:       'OTP verified',
-  picked_up:          'Food picked up',
-  en_route_delivery:  'Delivering to NGO',
-  delivered:          'Delivered',
+  assigned: 'Task assigned',
+  accepted: 'Accepted task',
+  en_route_pickup: 'En route to pickup',
+  arrived_at_pickup: 'At donor location',
+  otp_verified: 'OTP verified',
+  picked_up: 'Food picked up',
+  en_route_delivery: 'Delivering to NGO',
+  delivered: 'Delivered',
 };
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -67,23 +67,23 @@ export function LiveTracking() {
   useLeafletFix();
 
   const { ngo, volunteers, activeTasks, fetchVolunteers, fetchActiveTasks, fetchNgo } = useNgoStore();
-  const mapRef      = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<L.Map | null>(null);
-  const tileLayer   = useRef<L.TileLayer | null>(null);
-  const markerMap   = useRef<Map<string, VolunteerMarkerState>>(new Map());
-  const ngoMarker   = useRef<L.Marker | null>(null);
+  const tileLayer = useRef<L.TileLayer | null>(null);
+  const markerMap = useRef<Map<string, VolunteerMarkerState>>(new Map());
+  const ngoMarker = useRef<L.Marker | null>(null);
 
-  const [selectedTile, setSelectedTile]       = useState<TileLayerKey>('dark');
-  const [selectedVolId, setSelectedVolId]     = useState<string | null>(null);
-  const [sidebarOpen, setSidebarOpen]         = useState(true);
-  const [lastRefreshed, setLastRefreshed]     = useState(new Date());
-  const [totalPings, setTotalPings]           = useState(0);
+  const [selectedTile, setSelectedTile] = useState<TileLayerKey>('dark');
+  const [selectedVolId, setSelectedVolId] = useState<string | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [totalPings, setTotalPings] = useState(0);
 
   // ── derived data ─────────────────────────────────────────────────────────
   const sortedVols = [...volunteers].sort(
     (a, b) => (STATUS_ORDER[a.availability_status] ?? 9) - (STATUS_ORDER[b.availability_status] ?? 9)
   );
-  const selectedVol  = volunteers.find(v => v.id === selectedVolId) ?? null;
+  const selectedVol = volunteers.find(v => v.id === selectedVolId) ?? null;
   const selectedTask = activeTasks.find(t => (t.volunteer as any)?.id === selectedVolId) ?? null;
 
   // ── Initialize Leaflet map ───────────────────────────────────────────────
@@ -91,8 +91,8 @@ export function LiveTracking() {
     if (!mapRef.current || mapInstance.current) return;
 
     const center: L.LatLngTuple = [
-      ngo?.primary_lat  ?? 12.9716,
-      ngo?.primary_lng  ?? 77.5946,
+      ngo?.primary_lat ?? 12.9716,
+      ngo?.primary_lng ?? 77.5946,
     ];
 
     const map = L.map(mapRef.current, {
@@ -109,7 +109,7 @@ export function LiveTracking() {
       maxZoom: 19,
     }).addTo(map);
 
-    tileLayer.current   = tile;
+    tileLayer.current = tile;
     mapInstance.current = map;
 
     // Custom zoom controls (top-right)
@@ -147,7 +147,7 @@ export function LiveTracking() {
 
       const latlng: L.LatLngTuple = [vol.current_lat, vol.current_lng];
       const onTask = vol.availability_status === 'on_task';
-      const icon   = createVolunteerIcon(vol.full_name, vol.availability_status as any, onTask);
+      const icon = createVolunteerIcon(vol.full_name, vol.availability_status as any, onTask);
 
       const existing = markerMap.current.get(vol.id);
 
@@ -274,7 +274,7 @@ export function LiveTracking() {
 
   // ── Pan to selected volunteer ─────────────────────────────────────────────
   const focusVolunteer = useCallback((volId: string) => {
-    const vol   = volunteers.find(v => v.id === volId);
+    const vol = volunteers.find(v => v.id === volId);
     const state = markerMap.current.get(volId);
     if (vol?.current_lat && mapInstance.current && state) {
       mapInstance.current.flyTo([vol.current_lat, vol.current_lng], 16, { duration: 1.2 });
@@ -294,9 +294,9 @@ export function LiveTracking() {
   };
 
   // ── Stats ─────────────────────────────────────────────────────────────────
-  const onTaskCount    = volunteers.filter(v => v.availability_status === 'on_task').length;
+  const onTaskCount = volunteers.filter(v => v.availability_status === 'on_task').length;
   const availableCount = volunteers.filter(v => v.availability_status === 'available').length;
-  const offlineCount   = volunteers.filter(v => v.availability_status === 'offline' || v.availability_status === 'break').length;
+  const offlineCount = volunteers.filter(v => v.availability_status === 'offline' || v.availability_status === 'break').length;
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -365,33 +365,29 @@ export function LiveTracking() {
                     <button
                       key={vol.id}
                       onClick={() => hasLocation ? focusVolunteer(vol.id) : setSelectedVolId(vol.id)}
-                      className={`w-full flex items-start gap-3 p-4 border-b border-white/5 text-left transition-all ${
-                        isSelected ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'
-                      }`}
+                      className={`w-full flex items-start gap-3 p-4 border-b border-white/5 text-left transition-all ${isSelected ? 'bg-white/[0.04]' : 'hover:bg-white/[0.02]'
+                        }`}
                     >
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${
-                          vol.availability_status === 'on_task' ? 'bg-amber-600/60' :
-                          vol.availability_status === 'available' ? 'bg-emerald-600/60' :
-                          'bg-gray-700'
-                        }`}>
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center text-white text-sm font-bold ${vol.availability_status === 'on_task' ? 'bg-amber-600/60' :
+                            vol.availability_status === 'available' ? 'bg-emerald-600/60' :
+                              'bg-gray-700'
+                          }`}>
                           {vol.full_name[0]}
                         </div>
-                        <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-gray-900 ${
-                          vol.availability_status === 'available' ? 'bg-emerald-400' :
-                          vol.availability_status === 'on_task' ? 'bg-amber-400' :
-                          vol.availability_status === 'break' ? 'bg-blue-400' : 'bg-gray-600'
-                        }`} />
+                        <span className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-gray-900 ${vol.availability_status === 'available' ? 'bg-emerald-400' :
+                            vol.availability_status === 'on_task' ? 'bg-amber-400' :
+                              vol.availability_status === 'break' ? 'bg-blue-400' : 'bg-gray-600'
+                          }`} />
                       </div>
 
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <span className="text-sm font-medium text-white truncate">{vol.full_name}</span>
-                          <span className={`text-xs px-1.5 py-0.5 rounded-md border font-medium capitalize ml-2 flex-shrink-0 ${
-                            STATUS_BADGE_CLS[vol.availability_status] || ''
-                          }`}>
+                          <span className={`text-xs px-1.5 py-0.5 rounded-md border font-medium capitalize ml-2 flex-shrink-0 ${STATUS_BADGE_CLS[vol.availability_status] || ''
+                            }`}>
                             {vol.availability_status.replace('_', ' ')}
                           </span>
                         </div>
@@ -547,11 +543,10 @@ export function LiveTracking() {
                 <button
                   key={key}
                   onClick={() => setSelectedTile(key)}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all ${
-                    selectedTile === key
+                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-left transition-all ${selectedTile === key
                       ? 'bg-teal-500/20 text-teal-400'
                       : 'text-gray-400 hover:bg-white/5 hover:text-white'
-                  }`}
+                    }`}
                 >
                   {selectedTile === key && <CheckCircle size={10} />}
                   {TILE_LAYERS[key].label}
@@ -623,7 +618,7 @@ function volPopupHtml(vol: any): string {
         <div style="width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,${statusColor}cc,${statusColor}66);display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;color:#fff;border:2px solid ${statusColor};">${vol.full_name[0]}</div>
         <div>
           <div style="font-size:13px;font-weight:600;color:#fff;">${vol.full_name}</div>
-          <div style="font-size:11px;color:${statusColor};text-transform:capitalize;margin-top:1px;">${vol.availability_status.replace('_',' ')}</div>
+          <div style="font-size:11px;color:${statusColor};text-transform:capitalize;margin-top:1px;">${vol.availability_status.replace('_', ' ')}</div>
         </div>
       </div>
       <div style="font-size:11px;color:#6b7280;line-height:1.6;">
