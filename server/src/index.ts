@@ -14,10 +14,23 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // Socket.io setup
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:5176',
+  process.env.FRONTEND_URL
+].filter(Boolean) as string[];
+
+// Production fallback: If no FRONTEND_URL is provided, we might want to allow most common origins or just log a warning
+if (process.env.FRONTEND_URL === '*') {
+  console.log('CORS: Allowing all origins (*)');
+}
+
 export const io = new SocketServer(httpServer, {
   cors: {
-    origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
-    credentials: true,
+    origin: process.env.FRONTEND_URL === '*' ? '*' : allowedOrigins,
+    credentials: process.env.FRONTEND_URL !== '*', // Credentials cannot be true with wildcard origin
   },
 });
 
@@ -68,8 +81,8 @@ app.use((req, res, next) => {
 });
 app.use(helmet());
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:5176'],
-  credentials: true
+  origin: process.env.FRONTEND_URL === '*' ? '*' : allowedOrigins,
+  credentials: process.env.FRONTEND_URL !== '*'
 }));
 app.use(express.json());
 app.use(morgan('dev'));

@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: rescuebite-backend
+    runtime: node
+    plan: free # or standard
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    rootDirectory: server
+    envVarGroups:
+      - name: rescuebite-env
+    envVars:
+      - key: PORT
+        value: 5000
+      - key: NODE_ENV
+        value: production
+      - key: FRONTEND_URL
+        sync: false # Set this in Render dashboard to your frontend URL
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
